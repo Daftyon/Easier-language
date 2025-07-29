@@ -1,25 +1,28 @@
+#!/usr/bin/env python3
+"""
+Setup script pour El Programming Language
+"""
+
 from setuptools import setup, find_packages
+import os
+
+# Lire le répertoire actuel
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 setup(
-    name='easierlang',
-    version='1.0',
+    name="el-language",
+    version="1.0.0",
+    description="El Programming Language",
+    author="Votre Nom",
+    author_email="your.email@example.com",
     packages=find_packages(),
-    install_requires=[
-        # List your dependencies here
-    ],
+    py_modules=["el_cli"],  # Inclure explicitement el_cli.py
     entry_points={
-        'console_scripts': [
-            'easierlang = compiler.main:main',
+        "console_scripts": [
+            "el=el_cli:main",
         ],
     },
-    author='AHMED HAFDI',
-    author_email='ahmed.hafdi.contact@gmail.com',
-    description='A brief description of your compiler',
-    long_description='Longer description of your compiler',
-    url='https://github.com/HAFDIAHMED/Easier-Lang',  # Replace with your GitHub repository URL
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-    ],
+    python_requires=">=3.8",
+    install_requires=[],
+    include_package_data=True,
 )

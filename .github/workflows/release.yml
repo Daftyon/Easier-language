@@ -1,0 +1,380 @@
+# .github/workflows/release.yml
+name: 🚀 El Language Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    name: Build El Language
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            executable: el.exe
+            asset_name: el-windows-x64.exe
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            executable: el
+            asset_name: el-linux-x64
+          - os: macos-latest
+            platform: macos
+            arch: x64
+            executable: el
+            asset_name: el-macos-x64
+
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -e .
+
+    - name: 📝 Create examples directory
+      run: |
+        mkdir -p examples
+      shell: bash
+
+    - name: 📝 Create example files
+      shell: bash
+      run: |
+        cat > examples/hello_world.el << 'EOF'
+        program hello_world {
+            show "Hello, World!";
+            show "Welcome to El Programming Language!";
+        }
+        EOF
+        
+        cat > examples/calculator.el << 'EOF'
+        program calculator {
+            function add(a: integer, b: integer): integer {
+                return a + b;
+            }
+            
+            function multiply(a: integer, b: integer): integer {
+                return a * b;
+            }
+            
+            var x: integer = 10;
+            var y: integer = 5;
+            
+            show "Calculator Demo";
+            show x + " + " + y + " = " + add(x, y);
+            show x + " * " + y + " = " + multiply(x, y);
+        }
+        EOF
+        
+        cat > examples/fibonacci.el << 'EOF'
+        program fibonacci {
+            function fib(n: integer): integer {
+                if n <= 1 {
+                    return n;
+                }
+                return fib(n - 1) + fib(n - 2);
+            }
+            
+            show "Fibonacci sequence:";
+            for i: integer = 0; i < 8; i = i + 1 {
+                show "F(" + i + ") = " + fib(i);
+            }
+        }
+        EOF
+
+    - name: 🏗️ Build executable (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        python -m PyInstaller --onefile --name el --console --add-data "compiler;compiler" --add-data "utils;utils" --add-data "system;system" --add-data "examples;examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
+
+    - name: 🏗️ Build executable (Linux/macOS)
+      if: matrix.platform != 'windows'
+      run: |
+        python -m PyInstaller --onefile --name el --console --add-data "compiler:compiler" --add-data "utils:utils" --add-data "system:system" --add-data "examples:examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
+
+    - name: 🧪 Test executable
+      shell: bash
+      run: |
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          ./dist/el.exe --version
+          echo 'program test { show "Build test successful!"; }' > test.el
+          ./dist/el.exe test.el
+        else
+          ./dist/el --version
+          echo 'program test { show "Build test successful!"; }' > test.el
+          ./dist/el test.el
+        fi
+
+    - name: 📄 Create README for release
+      shell: bash
+      run: |
+        cat > dist/README.txt << 'EOF'
+        # El Programming Language v${{ github.ref_name }}
+        
+        ## 🚀 Quick Start
+        
+        ### Windows:
+        1. Download el-windows-x64.exe
+        2. Rename to el.exe (optional)
+        3. Run: el.exe --version
+        
+        ### Linux/macOS:
+        1. Download el-linux-x64 or el-macos-x64
+        2. Make executable: chmod +x el-*
+        3. Run: ./el-* --version
+        
+        ## 📖 Usage
+        
+        ```bash
+        # Show help
+        el --help
+        
+        # Interactive mode
+        el -i
+        
+        # Run a file
+        el program.el
+        
+        # Execute code directly
+        el -c "program hello { show 'Hello World!'; }"
+        ```
+        
+        ## 📝 Example Program
+        
+        Create a file `hello.el`:
+        ```el
+        program hello {
+            var name: string = "Developer";
+            show "Hello " + name + "!";
+            
+            function greet(who: string): string {
+                return "Welcome to El Language, " + who + "!";
+            }
+            
+            show greet(name);
+        }
+        ```
+        
+        Run it: `el hello.el`
+        
+        ## 🌐 Links
+        - GitHub: https://github.com/${{ github.repository }}
+        - Documentation: https://github.com/${{ github.repository }}/wiki
+        - Report Issues: https://github.com/${{ github.repository }}/issues
+        
+        Made with ❤️ by the El Language team
+        EOF
+
+    - name: 📁 Create portable package
+      shell: bash
+      run: |
+        mkdir -p release/el-${{ matrix.platform }}-${{ matrix.arch }}
+        cp dist/${{ matrix.executable }} release/el-${{ matrix.platform }}-${{ matrix.arch }}/
+        cp -r examples release/el-${{ matrix.platform }}-${{ matrix.arch }}/
+        cp dist/README.txt release/el-${{ matrix.platform }}-${{ matrix.arch }}/
+        
+        # Create start script for Windows
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          cat > release/el-${{ matrix.platform }}-${{ matrix.arch }}/start-el.bat << 'EOF'
+        @echo off
+        echo El Programming Language
+        echo Type 'el --help' for help
+        echo.
+        cmd /k
+        EOF
+        fi
+        
+        # Create archive
+        cd release
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          7z a -tzip ../el-${{ matrix.platform }}-${{ matrix.arch }}.zip el-${{ matrix.platform }}-${{ matrix.arch }}/*
+        else
+          tar -czf ../el-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz el-${{ matrix.platform }}-${{ matrix.arch }}/*
+        fi
+        cd ..
+
+    - name: 📤 Upload executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: dist/${{ matrix.executable }}
+
+    - name: 📤 Upload portable package
+      uses: actions/upload-artifact@v4
+      with:
+        name: el-${{ matrix.platform }}-${{ matrix.arch }}-package
+        path: |
+          el-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          el-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+        if-no-files-found: ignore
+
+  release:
+    name: 🎉 Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📥 Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: 📋 List artifacts
+      run: |
+        echo "Downloaded artifacts:"
+        find artifacts -type f -name "*" | sort
+
+    - name: 📝 Generate release notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        # 🎉 El Programming Language ${{ github.ref_name }}
+        
+        A modern, easy-to-learn programming language with clean syntax and powerful features.
+        
+        ## ✨ What's New
+        
+        - 🚀 **Standalone Executables**: No Python installation required
+        - 💻 **Interactive REPL**: Test code instantly with `el -i`
+        - 📚 **Example Programs**: Hello World, Calculator, Fibonacci included
+        - 🌐 **Cross-Platform**: Windows, Linux, and macOS support
+        - 🎯 **Easy Syntax**: Clean and readable programming language
+        
+        ## 📦 Downloads
+        
+        Choose the version for your operating system:
+        
+        ### Windows
+        - **el-windows-x64.exe** - Windows executable (64-bit)
+        - **el-windows-x64-package.zip** - Complete package with examples
+        
+        ### Linux
+        - **el-linux-x64** - Linux executable (64-bit) 
+        - **el-linux-x64-package.tar.gz** - Complete package with examples
+        
+        ### macOS
+        - **el-macos-x64** - macOS executable (64-bit)
+        - **el-macos-x64-package.tar.gz** - Complete package with examples
+        
+        ## 🚀 Quick Start
+        
+        1. Download the appropriate executable for your system
+        2. Make it executable (Linux/macOS): `chmod +x el-*`
+        3. Test it: `./el --version` (or `el.exe --version` on Windows)  
+        4. Try interactive mode: `./el -i`
+        
+        ## 📖 Example Program
+        
+        ```el
+        program hello {
+            var name: string = "World";
+            show "Hello " + name + "!";
+            
+            function fibonacci(n: integer): integer {
+                if n <= 1 {
+                    return n;
+                }
+                return fibonacci(n-1) + fibonacci(n-2);
+            }
+            
+            show "Fibonacci(7) = " + fibonacci(7);
+        }
+        ```
+        
+        Save as `hello.el` and run: `el hello.el`
+        
+        ## 🌐 Resources
+        
+        - 📚 [Documentation](https://github.com/${{ github.repository }}/wiki)
+        - 🐛 [Report Issues](https://github.com/${{ github.repository }}/issues)
+        - 💬 [Discussions](https://github.com/${{ github.repository }}/discussions)
+        - ⭐ [Star this project](https://github.com/${{ github.repository }})
+        
+        ---
+        
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/v0.1.0...${{ github.ref_name }}
+        EOF
+
+    - name: 📝 Prepare release assets
+      run: |
+        mkdir -p release_assets
+        
+        # Copy executables with proper names
+        cp artifacts/el-windows-x64/el.exe release_assets/el-windows-x64.exe
+        cp artifacts/el-linux-x64/el release_assets/el-linux-x64
+        cp artifacts/el-macos-x64/el release_assets/el-macos-x64
+        
+        # Copy packages
+        find artifacts -name "*.zip" -exec cp {} release_assets/ \;
+        find artifacts -name "*.tar.gz" -exec cp {} release_assets/ \;
+        
+        # Make executables... executable
+        chmod +x release_assets/el-*
+        
+        echo "Release assets:"
+        ls -la release_assets/
+
+    - name: 🎉 Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: "El Language ${{ github.ref_name }}"
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          release_assets/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📊 Release Summary
+      run: |
+        echo "## 🎉 Release ${{ github.ref_name }} Created Successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Assets Published:" >> $GITHUB_STEP_SUMMARY
+        echo "- el-windows-x64.exe (Windows executable)" >> $GITHUB_STEP_SUMMARY
+        echo "- el-linux-x64 (Linux executable)" >> $GITHUB_STEP_SUMMARY  
+        echo "- el-macos-x64 (macOS executable)" >> $GITHUB_STEP_SUMMARY
+        echo "- Complete packages with examples for all platforms" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🌐 Release URL:" >> $GITHUB_STEP_SUMMARY
+        echo "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+  publish-stats:
+    name: 📊 Publish Release Stats  
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 📊 Calculate release metrics
+      run: |
+        echo "🎯 El Language ${{ github.ref_name }} Release Metrics:" 
+        echo "- ✅ 3 platforms supported (Windows, Linux, macOS)"
+        echo "- 📦 6+ downloadable assets created"
+        echo "- 🏗️ Built with GitHub Actions"
+        echo "- 🚀 Ready for public distribution"
+        echo "- 📈 Zero-dependency standalone executables"

@@ -11,10 +11,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 setup(
     name="el-language",
-    version="1.0.0",
+    version="1.0.1",
     description="El Programming Language",
-    author="Votre Nom",
-    author_email="your.email@example.com",
+    author="AHMED HAFDI",
+    author_email="ahmed.hafdi.contact@gmail.com",
     packages=find_packages(),
     py_modules=["el_cli"],  # Inclure explicitement el_cli.py
     entry_points={

@@ -24,10 +24,10 @@ jobs:
     
     steps:
     - name: 📥 Checkout repository
-      uses: actions/checkout@v4
+    #   uses: actions/checkout@v4
     
     - name: 🐍 Set up Python
-      uses: actions/setup-python@v4
+    #   uses: actions/setup-python@v4
       with:
         python-version: '3.11'
     
@@ -410,7 +410,7 @@ jobs:
 
     - name: 📤 Upload to GitHub Pages
       if: github.ref == 'refs/heads/main'
-      uses: actions/upload-pages-artifact@v3
+    #   uses: actions/upload-pages-artifact@v3
       with:
         path: docs/_build/html
 

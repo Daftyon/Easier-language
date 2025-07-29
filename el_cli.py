@@ -16,7 +16,7 @@ except ImportError as e:
     print("Assurez-vous que tous les modules sont dans le chemin Python")
     sys.exit(1)
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 def main():
     """Point d'entrée principal pour El CLI"""

@@ -1,38 +1,448 @@
-
 # .github/workflows/docs.yml
-name: Documentation
+name: 📚 Documentation
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-docs:
+    name: 🏗️ Build Documentation
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
     
-    - name: Set up Python
+    - name: 🐍 Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
     
-    - name: Install dependencies
+    - name: 📦 Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[docs]
+        pip install sphinx sphinx-rtd-theme myst-parser sphinx-copybutton
+        pip install -e .
     
-    - name: Build documentation
+    - name: 📁 Create docs structure if missing
+      run: |
+        if [ ! -d "docs" ]; then
+          mkdir -p docs
+          echo "Creating documentation structure..."
+        fi
+    
+    - name: 📝 Generate documentation files
+      run: |
+        # Create docs/conf.py if it doesn't exist
+        if [ ! -f "docs/conf.py" ]; then
+          cat > docs/conf.py << 'EOF'
+        # Configuration file for the Sphinx documentation builder.
+        
+        project = 'El Programming Language'
+        copyright = '2024, El Language Team'
+        author = 'El Language Team'
+        release = '1.0.0'
+        
+        extensions = [
+            'sphinx.ext.autodoc',
+            'sphinx.ext.viewcode',
+            'sphinx.ext.napoleon',
+            'myst_parser',
+            'sphinx_copybutton',
+        ]
+        
+        templates_path = ['_templates']
+        exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+        
+        html_theme = 'sphinx_rtd_theme'
+        html_static_path = ['_static']
+        html_title = 'El Programming Language Documentation'
+        html_short_title = 'El Language Docs'
+        
+        # MyST settings
+        myst_enable_extensions = [
+            "colon_fence",
+            "deflist",
+            "html_admonition",
+            "html_image",
+        ]
+        
+        # Copy button settings
+        copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+        copybutton_prompt_is_regexp = True
+        EOF
+        fi
+        
+        # Create main index file
+        if [ ! -f "docs/index.md" ]; then
+          cat > docs/index.md << 'EOF'
+        # El Programming Language Documentation
+        
+        Welcome to El Programming Language - a modern, easy-to-learn programming language with clean syntax and powerful features.
+        
+        ## 🚀 Quick Start
+        
+        ### Installation
+        
+        Download the latest release from [GitHub Releases](https://github.com/your-repo/el-language/releases):
+        
+        - **Windows**: `el-windows-x64.exe`
+        - **Linux**: `el-linux-x64`
+        - **macOS**: `el-macos-x64`
+        
+        ### Your First Program
+        
+        Create a file `hello.el`:
+        
+        ```el
+        program hello {
+            show "Hello, World!";
+        }
+        ```
+        
+        Run it:
+        
+        ```bash
+        el hello.el
+        ```
+        
+        ### Interactive Mode
+        
+        Start the El REPL:
+        
+        ```bash
+        el -i
+        ```
+        
+        ## 📖 Language Guide
+        
+        ### Variables
+        
+        ```el
+        program variables {
+            var name: string = "El";
+            var version: float = 1.0;
+            var active: boolean = true;
+            var count: integer = 42;
+            
+            show "Language: " + name;
+            show "Version: " + version;
+        }
+        ```
+        
+        ### Functions
+        
+        ```el
+        program functions {
+            function fibonacci(n: integer): integer {
+                if n <= 1 {
+                    return n;
+                }
+                return fibonacci(n-1) + fibonacci(n-2);
+            }
+            
+            function greet(name: string): string {
+                return "Hello, " + name + "!";
+            }
+            
+            show fibonacci(10);
+            show greet("Developer");
+        }
+        ```
+        
+        ### Control Flow
+        
+        ```el
+        program control_flow {
+            var i: integer = 0;
+            
+            // While loop
+            while i < 5 do {
+                show "Count: " + i;
+                i = i + 1;
+            }
+            
+            // For loop
+            for j: integer = 0; j < 3; j = j + 1 {
+                show "For loop: " + j;
+            }
+            
+            // If statements
+            if i > 3 {
+                show "i is greater than 3";
+            } elif i === 3 {
+                show "i equals 3";
+            } else {
+                show "i is less than 3";
+            }
+        }
+        ```
+        
+        ## 📚 Language Reference
+        
+        ### Data Types
+        
+        | Type | Description | Example |
+        |------|-------------|---------|
+        | `integer` | Whole numbers | `42`, `-10`, `0` |
+        | `float` | Decimal numbers | `3.14`, `-2.5`, `1.0` |
+        | `string` | Text data | `"Hello"`, `'World'` |
+        | `boolean` | True/false values | `true`, `false` |
+        
+        ### Operators
+        
+        #### Arithmetic
+        - `+` Addition
+        - `-` Subtraction  
+        - `*` Multiplication
+        - `/` Division
+        
+        #### Comparison
+        - `===` Equal to
+        - `!=` Not equal to
+        - `>` Greater than
+        - `<` Less than
+        - `>=` Greater than or equal
+        - `<=` Less than or equal
+        
+        #### Logical
+        - `and` Logical AND
+        - `or` Logical OR
+        - `!` Logical NOT
+        
+        ### Keywords
+        
+        ```
+        program    function   return     if         elif       else
+        for        while      do         break      var        true
+        false      and        or         not        show       integer
+        float      string     boolean    object
+        ```
+        
+        ## 🎯 Examples
+        
+        ### Calculator
+        
+        ```el
+        program calculator {
+            function add(a: float, b: float): float {
+                return a + b;
+            }
+            
+            function multiply(a: float, b: float): float {
+                return a * b;
+            }
+            
+            function divide(a: float, b: float): float {
+                if b === 0.0 {
+                    show "Error: Division by zero!";
+                    return 0.0;
+                }
+                return a / b;
+            }
+            
+            show "Calculator Demo";
+            show "5 + 3 = " + add(5.0, 3.0);
+            show "5 * 3 = " + multiply(5.0, 3.0);
+            show "15 / 3 = " + divide(15.0, 3.0);
+        }
+        ```
+        
+        ### Prime Number Checker
+        
+        ```el
+        program prime_checker {
+            function is_prime(n: integer): boolean {
+                if n <= 1 {
+                    return false;
+                }
+                if n <= 3 {
+                    return true;
+                }
+                if n % 2 === 0 {
+                    return false;
+                }
+                
+                var i: integer = 3;
+                while i * i <= n {
+                    if n % i === 0 {
+                        return false;
+                    }
+                    i = i + 2;
+                }
+                return true;
+            }
+            
+            var number: integer = 17;
+            if is_prime(number) {
+                show number + " is prime";
+            } else {
+                show number + " is not prime";
+            }
+        }
+        ```
+        
+        ## 🛠️ Command Line Usage
+        
+        ### Basic Commands
+        
+        ```bash
+        # Show help
+        el --help
+        
+        # Show version
+        el --version
+        
+        # Run a file
+        el script.el
+        
+        # Execute code directly
+        el -c "program test { show 'Hello!'; }"
+        
+        # Interactive mode
+        el -i
+        ```
+        
+        ### Debug Options
+        
+        ```bash
+        # Show tokens (lexical analysis)
+        el --tokens script.el
+        
+        # Show AST (syntax tree)
+        el --ast script.el
+        
+        # Verbose output
+        el --verbose script.el
+        ```
+        
+        ## 🤝 Contributing
+        
+        We welcome contributions! Here's how you can help:
+        
+        ### Bug Reports
+        1. Check existing issues first
+        2. Create a detailed bug report with:
+           - El version (`el --version`)
+           - Operating system
+           - Sample code that reproduces the issue
+           - Expected vs actual behavior
+        
+        ### Feature Requests
+        1. Open an issue with:
+           - Clear description of the feature
+           - Use cases and examples
+           - Why it would benefit El users
+        
+        ### Code Contributions
+        1. Fork the repository
+        2. Create a feature branch
+        3. Make your changes with tests
+        4. Submit a pull request
+        
+        ## 📄 License
+        
+        El Programming Language is released under the [MIT License](https://opensource.org/licenses/MIT).
+        
+        ---
+        
+        **Made with ❤️ for developers who love clean, readable code**
+        EOF
+        fi
+        
+        # Create Makefile for Sphinx
+        if [ ! -f "docs/Makefile" ]; then
+          cat > docs/Makefile << 'EOF'
+        # Minimal makefile for Sphinx documentation
+        
+        SPHINXOPTS    ?=
+        SPHINXBUILD  ?= sphinx-build
+        SOURCEDIR    = .
+        BUILDDIR     = _build
+        
+        help:
+        	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+        
+        .PHONY: help Makefile
+        
+        %: Makefile
+        	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+        EOF
+        fi
+        
+        # Create requirements.txt for docs
+        if [ ! -f "docs/requirements.txt" ]; then
+          cat > docs/requirements.txt << 'EOF'
+        sphinx>=4.0
+        sphinx-rtd-theme>=1.0
+        myst-parser>=0.17
+        sphinx-copybutton>=0.5
+        EOF
+        fi
+
+    - name: 🏗️ Build documentation
       run: |
         cd docs
-        make html
-    
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
+        sphinx-build -b html . _build/html
+
+    - name: 📤 Upload documentation artifacts
+      uses: actions/upload-artifact@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/_build/html
+        name: documentation
+        path: docs/_build/html
+
+    - name: 🚀 Setup Pages
+      if: github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v4
+
+    - name: 📤 Upload to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_build/html
+
+  deploy:
+    name: 🌐 Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-docs
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: 🚀 Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  link-check:
+    name: 🔗 Check Documentation Links
+    runs-on: ubuntu-latest
+    needs: build-docs
+    
+    steps:
+    - name: 📥 Download documentation
+      uses: actions/download-artifact@v4
+      with:
+        name: documentation
+        path: docs
+
+    - name: 🔗 Check links
+      uses: lycheeverse/lychee-action@v1
+      with:
+        args: --verbose --no-progress 'docs/**/*.html'
+        fail: false

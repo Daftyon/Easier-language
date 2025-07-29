@@ -1,0 +1,62 @@
+name: 📝 Update Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of documentation update'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - manual
+          - api
+          - examples
+
+jobs:
+  update-docs:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx sphinx-rtd-theme myst-parser
+        pip install -e .
+
+    - name: 🔄 Auto-generate API documentation
+      if: github.event.inputs.update_type == 'api' || github.event.inputs.update_type == 'auto'
+      run: |
+        mkdir -p docs/api
+        sphinx-apidoc -o docs/api compiler utils system --force --module-first
+
+    - name: 📝 Update example documentation
+      if: github.event.inputs.update_type == 'examples' || github.event.inputs.update_type == 'auto'
+      run: |
+        echo "Updating examples documentation..."
+        # Add script to scan examples/ and update docs
+        
+    - name: 🏗️ Build documentation
+      run: |
+        cd docs
+        sphinx-build -b html . _build/html
+
+    - name: 💾 Commit documentation updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/
+        git diff --staged --quiet || git commit -m "📝 Auto-update documentation"
+        git push

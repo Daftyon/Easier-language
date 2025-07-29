@@ -1,11 +1,12 @@
-program calculator {
-    function add(a: integer, b: integer): integer {
-        return a + b;
+ALGORITHM example
+{
+    var x, y, counter : integer;
+    x = 0;
+    counter = 0;
+
+    WHILE counter <= 10 DO {
+        SHOW(x);
+        x = x + 1;
+        counter = counter + 1; 
     }
-    
-    var x: integer = 10;
-    var y: integer = 5;
-    
-    show "Calculatrice El";
-    show x + " + " + y + " = " + add(x, y);
 }

@@ -1,12 +1,8 @@
-<p align="center">
-    <h1 align="center">Custom Language</h1>
-</p>
-
+![alt text](image-1.png)
 
 ---
 
 ##### Program starts with "PROGRAM" keyword followed by "ID"(program name) </p>
-
  ```javascript
     PROGRAM Part10 { } 
 ```

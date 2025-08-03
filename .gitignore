@@ -110,3 +110,12 @@ src/*.out
 .env.development
 .env.test
 .env.production
+
+el_banners.py
+build_executable.py
+icon_to_banner_converter.py
+setup.py
+el_cli.py
+el_icone.ico
+el_standalone.py
+el.spec

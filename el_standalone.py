@@ -68,8 +68,8 @@ class ElREPL:
                 # Execute El code
                 try:
                     # Wrap code in a program if necessary
-                    if not code.startswith('ALGORITHM'):
-                        code = f"ALGORITHM repl {{ {code} }}"
+                    if not code.startswith('program'):
+                        code = f"program repl {{ {code} }}"
                     
                     El.compile(code)
                 except Exception as e:
@@ -84,11 +84,10 @@ class ElREPL:
                 
     def show_welcome(self):
         """Display welcome message"""
+        # Show ASCII banner
+        show_banner()
+        
         print(f"""
-╔══════════════════════════════════════╗
-║     El Programming Language v{__version__}   ║
-╚══════════════════════════════════════╝
-
 Type 'help' for help, 'exit' to quit
 Created by {__author__}
 """)

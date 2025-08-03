@@ -27,7 +27,9 @@ def check_dependencies():
     print("🔍 Checking dependencies...")
     
     dependencies = ['pyinstaller']
+    optional_dependencies = ['PIL']  # Pillow for icon handling
     missing = []
+    missing_optional = []
     
     for dep in dependencies:
         try:
@@ -37,12 +39,26 @@ def check_dependencies():
             missing.append(dep)
             print(f"❌ {dep} missing")
     
+    for dep in optional_dependencies:
+        try:
+            __import__(dep)
+            print(f"✅ {dep} (Pillow) installed")
+        except ImportError:
+            missing_optional.append('pillow')
+            print(f"⚠️  {dep} (Pillow) missing - needed for icon support")
+    
     if missing:
         print(f"\n📦 Installing missing dependencies...")
         for dep in missing:
             if not run_command(f"pip install {dep}"):
                 print(f"Unable to install {dep}")
                 return False
+    
+    if missing_optional:
+        print(f"\n📦 Installing optional dependencies for icon support...")
+        for dep in missing_optional:
+            if not run_command(f"pip install {dep}"):
+                print(f"⚠️  Unable to install {dep} - will build without icon")
     
     return True
 
@@ -128,6 +144,22 @@ def build_executable():
     
     system = platform.system().lower()
     
+    # Check if icon exists and is valid
+    icon_path = Path("el_icone.ico")
+    icon_option = []
+    
+    if icon_path.exists():
+        try:
+            # Try to verify if Pillow is available for icon processing
+            import PIL
+            icon_option = ["--icon", str(icon_path)]
+            print(f"✅ Using icon: {icon_path}")
+        except ImportError:
+            print("⚠️  Pillow not available - building without icon")
+            print("   Run 'pip install pillow' to enable icon support")
+    else:
+        print("⚠️  Icon file 'el_icone.ico' not found, building without icon")
+
     # PyInstaller command adapted to system
     base_cmd = [
         "pyinstaller",
@@ -144,7 +176,22 @@ def build_executable():
         "el_standalone.py"
     ]
     
+    # Add icon if available
+    base_cmd.extend(icon_option)
+    
     cmd = " ".join(base_cmd)
+    
+    # Try building with icon first, fallback without icon if it fails
+    if icon_option:
+        print("🔧 Attempting build with icon...")
+        if run_command(cmd):
+            return True
+        else:
+            print("⚠️  Build with icon failed, retrying without icon...")
+            # Remove icon option and try again
+            base_cmd = [arg for arg in base_cmd if not arg.startswith("--icon") and not arg.endswith(".ico")]
+            cmd = " ".join(base_cmd)
+    
     return run_command(cmd)
 
 def create_portable_package():

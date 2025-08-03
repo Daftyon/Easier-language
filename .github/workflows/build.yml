@@ -55,8 +55,9 @@ jobs:
         pip install pyinstaller pillow
 
     - name: Create examples directory
+      shell: bash
       run: |
-        mkdir -p examples
+        mkdir -p examples || true
 
     - name: Create hello_world example
       shell: bash
@@ -72,7 +73,7 @@ jobs:
       shell: bash
       run: |
         cat > examples/calculator.el << 'EOF'
-         ALGORITHM example
+        ALGORITHM example
         {
             var x, y, counter : integer;
             x = 0;
@@ -108,18 +109,20 @@ jobs:
       shell: bash
       run: |
         echo "Project structure:"
-        find . -name "*.py" -type f | head -20
-        ls -la compiler/ utils/ system/ examples/ || true
+        find . -name "*.py" -type f | head -20 || true
+        ls -la compiler/ utils/ system/ examples/ 2>/dev/null || echo "Some directories may not exist"
 
     - name: Build executable (Windows)
       if: matrix.platform == 'windows'
+      shell: bash
       run: |
-        pyinstaller --onefile --name el --console --icon="${{ matrix.icon }}" --add-data "compiler;compiler" --add-data "utils;utils" --add-data "system;system" --add-data "examples;examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
+        pyinstaller --onefile --name el --console --add-data "compiler;compiler" --add-data "utils;utils" --add-data "system;system" --add-data "examples;examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
 
     - name: Build executable (Linux/macOS)
       if: matrix.platform != 'windows'
+      shell: bash
       run: |
-        pyinstaller --onefile --name el --console --icon="${{ matrix.icon }}" --add-data "compiler:compiler" --add-data "utils:utils" --add-data "system:system" --add-data "examples:examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
+        pyinstaller --onefile --name el --console --add-data "compiler:compiler" --add-data "utils:utils" --add-data "system:system" --add-data "examples:examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
 
     - name: Test executable
       shell: bash
@@ -133,7 +136,7 @@ jobs:
       run: |
         cd dist
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          7z a ../el-${{ matrix.platform }}-${{ matrix.arch }}.zip el.exe
+          powershell Compress-Archive -Path "el.exe" -DestinationPath "../el-${{ matrix.platform }}-${{ matrix.arch }}.zip" || 7z a ../el-${{ matrix.platform }}-${{ matrix.arch }}.zip el.exe
         else
           tar -czf ../el-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz el
         fi

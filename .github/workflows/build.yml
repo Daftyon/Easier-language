@@ -62,7 +62,7 @@ jobs:
       shell: bash
       run: |
         cat > examples/hello_world.el << 'EOF'
-        program hello_world {
+        ALGORITHM hello_world {
             show "Hello, World!";
             show "Welcome to El Programming Language!";
         }
@@ -72,16 +72,17 @@ jobs:
       shell: bash
       run: |
         cat > examples/calculator.el << 'EOF'
-        program calculator {
-            function add(a: integer, b: integer): integer {
-                return a + b;
+         ALGORITHM example
+        {
+            var x, y, counter : integer;
+            x = 0;
+            counter = 0;
+
+            WHILE counter <= 10 DO {
+                SHOW(x);
+                x = x + 1;
+                counter = counter + 1; 
             }
-            
-            var x: integer = 10;
-            var y: integer = 5;
-            
-            show "El Calculator";
-            show x + " + " + y + " = " + add(x, y);
         }
         EOF
 
@@ -89,15 +90,17 @@ jobs:
       shell: bash
       run: |
         cat > examples/fibonacci.el << 'EOF'
-        program fibonacci {
-            function fib(n: integer): integer {
-                if n <= 1 {
-                    return n;
-                }
-                return fib(n - 1) + fib(n - 2);
+        ALGORITHM example
+        {
+            var x, y, counter : integer;
+            x = 0;
+            counter = 0;
+
+            WHILE counter <= 10 DO {
+                SHOW(x);
+                x = x + 1;
+                counter = counter + 1; 
             }
-            
-            show "Fibonacci: " + fib(7);
         }
         EOF
 

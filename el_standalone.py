@@ -68,8 +68,8 @@ class ElREPL:
                 # Execute El code
                 try:
                     # Wrap code in a program if necessary
-                    if not code.startswith('program'):
-                        code = f"program repl {{ {code} }}"
+                    if not code.startswith('ALGORITHM'):
+                        code = f"ALGORITHM repl {{ {code} }}"
                     
                     El.compile(code)
                 except Exception as e:

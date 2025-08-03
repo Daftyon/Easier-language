@@ -13,7 +13,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+dist/*
 downloads/
 eggs/
 .eggs/
@@ -119,3 +119,6 @@ el_cli.py
 el_icone.ico
 el_standalone.py
 el.spec
+image.png
+image-1.png
+quick_build.bat

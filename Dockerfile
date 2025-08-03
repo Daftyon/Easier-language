@@ -5,9 +5,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
 # Copy source code
 COPY compiler/ ./compiler/
@@ -21,15 +19,7 @@ COPY el_cli.py .
 RUN pip install --no-cache-dir pyinstaller pillow
 
 # Build the executable
-RUN pyinstaller --onefile --name el --console \
-    --add-data "compiler:compiler" \
-    --add-data "utils:utils" \
-    --add-data "system:system" \
-    --add-data "examples:examples" \
-    --hidden-import compiler \
-    --hidden-import utils \
-    --hidden-import system \
-    el_standalone.py
+RUN pyinstaller --onefile --name el --console --add-data "compiler:compiler" --add-data "utils:utils" --add-data "system:system" --add-data "examples:examples" --hidden-import compiler --hidden-import utils --hidden-import system el_standalone.py
 
 # Make executable available in PATH
 RUN cp dist/el /usr/local/bin/el

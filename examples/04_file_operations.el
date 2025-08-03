@@ -1,4 +1,4 @@
-program file_operations {
+ALGORITHM file_operations {
     var filename: string = "test_output.txt";
     
     show "==== File Operations Demo ====";

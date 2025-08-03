@@ -1,4 +1,4 @@
-program control_flow {
+ALGORITHM control_flow {
     show "==== Control Flow Demo ====";
     
     var x: integer = 15;

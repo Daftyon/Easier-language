@@ -1,4 +1,4 @@
-program calculator {
+ALGORITHM calculator {
     show "==== El Calculator Demo ====";
     
     var a: integer = 10;

@@ -1,4 +1,4 @@
-program variables_demo {
+ALGORITHM variables_demo {
     show "==== Variables and Types Demo ====";
     
     var name: string = "El Language";

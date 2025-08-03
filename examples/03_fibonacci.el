@@ -1,4 +1,4 @@
-program fibonacci {
+ALGORITHM fibonacci {
     show "==== Fibonacci Sequence ====";
     
     var n1: integer = 0;

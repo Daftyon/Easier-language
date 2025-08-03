@@ -1,4 +1,4 @@
-program advanced_features {
+ALGORITHM advanced_features {
     // Arrays and collections
     var numbers: array[integer] = [1, 2, 3, 4, 5];
     var total: integer = 0;
@@ -12,7 +12,7 @@ program advanced_features {
     show "Sum of array: " + total;
     
     // String manipulation
-    var text: string = "  El Programming Language  ";
+    var text: string = "  El ALGORITHMming Language  ";
     show "Original: '" + text + "'";
     show "Trimmed: '" + trim(text) + "'";
     show "Uppercase: '" + upper(trim(text)) + "'";

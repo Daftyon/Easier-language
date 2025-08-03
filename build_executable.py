@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script de construction pour El Programming Language
-Crée un exécutable distributable
+Build script for El Programming Language
+Creates a distributable executable
 """
 
 import os
@@ -12,19 +12,19 @@ import shutil
 from pathlib import Path
 
 def run_command(cmd, cwd=None):
-    """Exécuter une commande système"""
-    print(f"🔧 Exécution: {cmd}")
+    """Execute a system command"""
+    print(f"🔧 Executing: {cmd}")
     result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Erreur: {result.stderr}")
+        print(f"❌ Error: {result.stderr}")
         return False
     if result.stdout.strip():
         print(f"📝 {result.stdout}")
     return True
 
 def check_dependencies():
-    """Vérifier que les dépendances sont installées"""
-    print("🔍 Vérification des dépendances...")
+    """Check that dependencies are installed"""
+    print("🔍 Checking dependencies...")
     
     dependencies = ['pyinstaller']
     missing = []
@@ -32,23 +32,23 @@ def check_dependencies():
     for dep in dependencies:
         try:
             __import__(dep)
-            print(f"✅ {dep} installé")
+            print(f"✅ {dep} installed")
         except ImportError:
             missing.append(dep)
-            print(f"❌ {dep} manquant")
+            print(f"❌ {dep} missing")
     
     if missing:
-        print(f"\n📦 Installation des dépendances manquantes...")
+        print(f"\n📦 Installing missing dependencies...")
         for dep in missing:
             if not run_command(f"pip install {dep}"):
-                print(f"Impossible d'installer {dep}")
+                print(f"Unable to install {dep}")
                 return False
     
     return True
 
 def clean_build():
-    """Nettoyer les anciens builds"""
-    print("🧹 Nettoyage des anciens builds...")
+    """Clean old builds"""
+    print("🧹 Cleaning old builds...")
     
     dirs_to_clean = ['build', 'dist', '__pycache__']
     files_to_clean = ['*.spec']
@@ -56,17 +56,17 @@ def clean_build():
     for dir_name in dirs_to_clean:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name)
-            print(f"🗑️  Supprimé: {dir_name}")
+            print(f"🗑️  Removed: {dir_name}")
     
-    # Nettoyer les fichiers .pyc récursivement
+    # Clean .pyc files recursively
     for root, dirs, files in os.walk('.'):
         for file in files:
             if file.endswith('.pyc'):
                 os.remove(os.path.join(root, file))
 
 def create_examples():
-    """Créer des fichiers d'exemple"""
-    print("📝 Création des fichiers d'exemple...")
+    """Create example files"""
+    print("📝 Creating example files...")
     
     examples_dir = Path("examples")
     examples_dir.mkdir(exist_ok=True)
@@ -74,10 +74,10 @@ def create_examples():
     # Hello World
     hello_world = """program hello_world {
     show "Hello, World!";
-    show "Bienvenue dans El Programming Language!";
+    show "Welcome to El Programming Language!";
 }"""
     
-    # Calculatrice
+    # Calculator
     calculator = """program calculator {
     function add(a: integer, b: integer): integer {
         return a + b;
@@ -90,7 +90,7 @@ def create_examples():
     var x: integer = 10;
     var y: integer = 5;
     
-    show "Calculatrice El";
+    show "El Calculator";
     show x + " + " + y + " = " + add(x, y);
     show x + " * " + y + " = " + multiply(x, y);
 }"""
@@ -104,13 +104,13 @@ def create_examples():
         return fib(n - 1) + fib(n - 2);
     }
     
-    show "Séquence de Fibonacci:";
+    show "Fibonacci Sequence:";
     for i: integer = 0; i < 10; i = i + 1 {
         show "F(" + i + ") = " + fib(i);
     }
 }"""
     
-    # Écrire les exemples
+    # Write examples
     examples = {
         "hello_world.el": hello_world,
         "calculator.el": calculator,
@@ -120,15 +120,15 @@ def create_examples():
     for filename, content in examples.items():
         with open(examples_dir / filename, 'w', encoding='utf-8') as f:
             f.write(content)
-        print(f"✅ Créé: examples/{filename}")
+        print(f"✅ Created: examples/{filename}")
 
 def build_executable():
-    """Construire l'exécutable avec PyInstaller"""
-    print("🏗️  Construction de l'exécutable...")
+    """Build executable with PyInstaller"""
+    print("🏗️  Building executable...")
     
     system = platform.system().lower()
     
-    # Commande PyInstaller adaptée au système
+    # PyInstaller command adapted to system
     base_cmd = [
         "pyinstaller",
         "--onefile",
@@ -148,74 +148,74 @@ def build_executable():
     return run_command(cmd)
 
 def create_portable_package():
-    """Créer un package portable"""
-    print("📦 Création du package portable...")
+    """Create portable package"""
+    print("📦 Creating portable package...")
     
-    # Créer le dossier portable
+    # Create portable folder
     portable_dir = Path("dist/el-portable")
     portable_dir.mkdir(exist_ok=True)
     
-    # Déterminer le nom de l'exécutable
+    # Determine executable name
     exe_name = "el.exe" if platform.system().lower() == "windows" else "el"
     exe_path = Path("dist") / exe_name
     
     if exe_path.exists():
-        # Copier l'exécutable
+        # Copy executable
         shutil.copy(exe_path, portable_dir)
-        print(f"✅ Copié: {exe_name}")
+        print(f"✅ Copied: {exe_name}")
         
-        # Copier les exemples
+        # Copy examples
         if Path("examples").exists():
             shutil.copytree("examples", portable_dir / "examples", dirs_exist_ok=True)
-            print("✅ Copié: examples/")
+            print("✅ Copied: examples/")
         
-        # Créer le README
-        readme_content = f"""# El Programming Language - Version Portable v1.0.0
+        # Create README
+        readme_content = f"""# El Programming Language - Portable Version v1.0.0
 
 ## 🚀 Installation
-1. Extrayez ce dossier où vous voulez sur votre ordinateur
-2. (Optionnel) Ajoutez le dossier à votre variable PATH
-3. Utilisez {exe_name} depuis la ligne de commande
+1. Extract this folder anywhere on your computer
+2. (Optional) Add the folder to your PATH variable
+3. Use {exe_name} from the command line
 
-## 📖 Utilisation
+## 📖 Usage
 
-### Commandes de base:
-- `{exe_name} --help`              : Afficher l'aide
-- `{exe_name} --version`           : Afficher la version
-- `{exe_name} fichier.el`          : Exécuter un fichier El
-- `{exe_name} -i`                  : Mode interactif (REPL)
-- `{exe_name} -c "code"`           : Exécuter du code directement
+### Basic commands:
+- `{exe_name} --help`              : Show help
+- `{exe_name} --version`           : Show version
+- `{exe_name} file.el`             : Execute an El file
+- `{exe_name} -i`                  : Interactive mode (REPL)
+- `{exe_name} -c "code"`           : Execute code directly
 
-### Exemples:
+### Examples:
 ```bash
-# Exécuter un exemple
+# Execute an example
 {exe_name} examples/hello_world.el
 
-# Mode interactif
+# Interactive mode
 {exe_name} -i
 
-# Code en ligne de commande
+# Command line code
 {exe_name} -c "program test {{ show 'Hello El!'; }}"
 ```
 
-## 📝 Syntaxe El Language
+## 📝 El Language Syntax
 
 ### Variables:
 ```el
-var nom: string = "El";
+var name: string = "El";
 var age: integer = 1;
-var prix: float = 19.99;
-var actif: boolean = true;
+var price: float = 19.99;
+var active: boolean = true;
 ```
 
-### Fonctions:
+### Functions:
 ```el
-function saluer(nom: string): string {{
-    return "Bonjour " + nom + "!";
+function greet(name: string): string {{
+    return "Hello " + name + "!";
 }}
 ```
 
-### Boucles:
+### Loops:
 ```el
 for i: integer = 0; i < 5; i = i + 1 {{
     show i;
@@ -229,123 +229,123 @@ while condition do {{
 ### Conditions:
 ```el
 if x > 5 {{
-    show "x est grand";
+    show "x is large";
 }} elif x === 5 {{
-    show "x égale 5";
+    show "x equals 5";
 }} else {{
-    show "x est petit";
+    show "x is small";
 }}
 ```
 
-## 📚 Exemples inclus
-- `hello_world.el` : Programme "Hello World"
-- `calculator.el`  : Calculatrice simple
-- `fibonacci.el`   : Séquence de Fibonacci
+## 📚 Included Examples
+- `hello_world.el` : "Hello World" program
+- `calculator.el`  : Simple calculator
+- `fibonacci.el`   : Fibonacci sequence
 
-## 🌐 Documentation et Support
-- GitHub:https://github.com/Daftyon/Easier-language
+## 🌐 Documentation and Support
+- GitHub: https://github.com/Daftyon/Easier-language
 - Documentation: https://el-language.org
-- Issues:https://github.com/Daftyon/Easier-language/issues
+- Issues: https://github.com/Daftyon/Easier-language/issues
 
-## 📄 Licence
-El Programming Language est distribué sous licence MIT.
+## 📄 License
+El Programming Language is distributed under the MIT license.
 
 ---
-Créé avec ❤️ par l'équipe El Language
+Created with ❤️ by the El Language team
 """
         
         with open(portable_dir / "README.txt", "w", encoding="utf-8") as f:
             f.write(readme_content)
-        print("✅ Créé: README.txt")
+        print("✅ Created: README.txt")
         
-        # Créer le script de lancement (Windows)
+        # Create launch script (Windows)
         if platform.system().lower() == "windows":
             batch_content = f"""@echo off
 echo El Programming Language - Portable
-echo Tapez 'el --help' pour l'aide
+echo Type 'el --help' for help
 echo.
 cmd /k
 """
             with open(portable_dir / "el-console.bat", "w") as f:
                 f.write(batch_content)
-            print("✅ Créé: el-console.bat")
+            print("✅ Created: el-console.bat")
         
-        # Créer le ZIP portable
-        print("🗜️  Création de l'archive ZIP...")
+        # Create portable ZIP
+        print("🗜️  Creating ZIP archive...")
         zip_name = f"el-portable-{platform.system().lower()}-{platform.machine().lower()}"
         shutil.make_archive(f"dist/{zip_name}", "zip", "dist", "el-portable")
-        print(f"✅ Archive créée: dist/{zip_name}.zip")
+        print(f"✅ Archive created: dist/{zip_name}.zip")
         
         return True
     else:
-        print(f"❌ Exécutable non trouvé: {exe_path}")
+        print(f"❌ Executable not found: {exe_path}")
         return False
 
 def create_installer_script():
-    """Créer un script d'installation pour Windows"""
+    """Create Windows installation script"""
     if platform.system().lower() != "windows":
         return True
     
-    print("📋 Création du script d'installation Windows...")
+    print("📋 Creating Windows installation script...")
     
     install_script = """@echo off
 echo ================================
 echo   El Programming Language
-echo   Installation Windows
+echo   Windows Installation
 echo ================================
 echo.
 
-REM Vérifier les privilèges administrateur
+REM Check administrator privileges
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo ATTENTION: Privilèges administrateur requis pour installation système
-    echo Installation dans le répertoire utilisateur...
+    echo WARNING: Administrator privileges required for system installation
+    echo Installing to user directory...
     set "INSTALL_DIR=%USERPROFILE%\\El"
 ) else (
     set "INSTALL_DIR=C:\\Program Files\\El"
 )
 
-echo Installation vers: %INSTALL_DIR%
+echo Installing to: %INSTALL_DIR%
 echo.
 
-REM Créer le répertoire
+REM Create directory
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-REM Copier les fichiers
+REM Copy files
 copy "el.exe" "%INSTALL_DIR%\\" >nul
 xcopy "examples" "%INSTALL_DIR%\\examples\\" /E /I /Q >nul
 copy "README.txt" "%INSTALL_DIR%\\" >nul
 
-REM Ajouter au PATH utilisateur
-echo Ajout au PATH...
+REM Add to user PATH
+echo Adding to PATH...
 setx PATH "%PATH%;%INSTALL_DIR%" >nul
 
 echo.
 echo ================================
-echo   Installation terminée!
+echo   Installation Complete!
 echo ================================
 echo.
-echo El est maintenant installé dans: %INSTALL_DIR%
-echo Redémarrez votre invite de commande et tapez 'el --version'
+echo El is now installed in: %INSTALL_DIR%
+echo Restart your command prompt and type 'el --version'
 echo.
 pause
 """
     
     with open("dist/install-windows.bat", "w") as f:
         f.write(install_script)
-    print("✅ Créé: install-windows.bat")
+    print("✅ Created: install-windows.bat")
     
     return True
 
 def show_build_summary():
-    """Afficher un résumé de la construction"""
+    """Show build summary"""
     print("\n" + "="*50)
-    print("🎉 CONSTRUCTION TERMINÉE AVEC SUCCÈS!")
+    print("🎉 BUILD COMPLETED SUCCESSFULLY!")
     print("="*50)
     
     dist_dir = Path("dist")
     if dist_dir.exists():
-        print("\n📦 Fichiers créés:")
+        print("\n📦 Files created:")
         total_size = 0
         
         for file_path in sorted(dist_dir.rglob("*")):
@@ -354,7 +354,7 @@ def show_build_summary():
                 total_size += size
                 size_mb = size / 1024 / 1024
                 
-                # Emoji selon le type de fichier
+                # Emoji by file type
                 if file_path.suffix == ".exe":
                     emoji = "⚡"
                 elif file_path.suffix == ".zip":
@@ -366,46 +366,46 @@ def show_build_summary():
                 
                 print(f"  {emoji} {file_path.name} ({size_mb:.1f} MB)")
         
-        print(f"\n📊 Taille totale: {total_size / 1024 / 1024:.1f} MB")
+        print(f"\n📊 Total size: {total_size / 1024 / 1024:.1f} MB")
     
-    print(f"\n🖥️  Plateforme: {platform.system()} {platform.machine()}")
+    print(f"\n🖥️  Platform: {platform.system()} {platform.machine()}")
     print(f"🐍 Python: {sys.version.split()[0]}")
     
-    print("\n🚀 Prêt pour distribution!")
-    print("   - Testez l'exécutable: dist/el.exe --version")
-    print("   - Distribuez le ZIP portable")
-    print("   - Partagez avec vos utilisateurs!")
+    print("\n🚀 Ready for distribution!")
+    print("   - Test executable: dist/el.exe --version")
+    print("   - Distribute the portable ZIP")
+    print("   - Share with your users!")
 
 def main():
-    """Fonction principale"""
-    print("🏗️  CONSTRUCTION D'EL PROGRAMMING LANGUAGE")
+    """Main function"""
+    print("🏗️  BUILDING EL PROGRAMMING LANGUAGE")
     print("="*50)
     
-    # Vérifications préliminaires
+    # Preliminary checks
     if not check_dependencies():
-        print("❌ Impossible de continuer sans les dépendances")
+        print("❌ Cannot continue without dependencies")
         return 1
     
-    # Nettoyer
+    # Clean
     clean_build()
     
-    # Créer les exemples
+    # Create examples
     create_examples()
     
-    # Construire l'exécutable
+    # Build executable
     if not build_executable():
-        print("❌ Échec de la construction de l'exécutable")
+        print("❌ Failed to build executable")
         return 1
     
-    # Créer le package portable
+    # Create portable package
     if not create_portable_package():
-        print("❌ Échec de la création du package portable")
+        print("❌ Failed to create portable package")
         return 1
     
-    # Créer le script d'installation
+    # Create installation script
     create_installer_script()
     
-    # Afficher le résumé
+    # Show summary
     show_build_summary()
     
     return 0
@@ -414,10 +414,10 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print("\n\n❌ Construction interrompue par l'utilisateur")
+        print("\n\n❌ Build interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Erreur inattendue: {e}")
+        print(f"\n❌ Unexpected error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

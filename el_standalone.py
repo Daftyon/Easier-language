@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 El Programming Language - Standalone Executable
-Version complète pour distribution
+Complete version for distribution
 """
 
 import sys
@@ -9,16 +9,16 @@ import os
 import argparse
 from pathlib import Path
 
-# Ajouter le répertoire courant au path pour les imports
+# Add current directory to path for imports
 if getattr(sys, 'frozen', False):
-    # Si nous sommes dans un exécutable PyInstaller
+    # If we are in a PyInstaller executable
     application_path = sys._MEIPASS
 else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.insert(0, application_path)
 
-# Import des composants du compilateur
+# Import compiler components
 try:
     from compiler.main import El
     from compiler.lexer import Lexer
@@ -26,14 +26,14 @@ try:
     from utils.constants import EOF
     from utils.errors import *
 except ImportError as e:
-    print(f"Erreur: Impossible d'importer les composants El: {e}")
+    print(f"Error: Unable to import El components: {e}")
     sys.exit(1)
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __author__ = "El Language Team"
 
 class ElREPL:
-    """Interface interactive pour El Language"""
+    """Interactive interface for El Language"""
     
     def __init__(self):
         self.history = []
@@ -47,7 +47,7 @@ class ElREPL:
         }
         
     def start(self):
-        """Démarrer le REPL interactif"""
+        """Start the interactive REPL"""
         self.show_welcome()
         
         while True:
@@ -57,88 +57,88 @@ class ElREPL:
                 if not code:
                     continue
                     
-                # Commandes spéciales
+                # Special commands
                 if code in self.commands:
                     self.commands[code]()
                     continue
                 
-                # Sauvegarder dans l'historique
+                # Save to history
                 self.history.append(code)
                 
-                # Exécuter le code El
+                # Execute El code
                 try:
-                    # Envelopper le code dans un programme si nécessaire
-                    if not code.startswith('program'):
-                        code = f"program repl {{ {code} }}"
+                    # Wrap code in a program if necessary
+                    if not code.startswith('ALGORITHM'):
+                        code = f"ALGORITHM repl {{ {code} }}"
                     
                     El.compile(code)
                 except Exception as e:
-                    print(f"Erreur El: {e}")
+                    print(f"El Error: {e}")
                     
             except KeyboardInterrupt:
-                print("\nUtilisez 'exit' pour quitter")
+                print("\nUse 'exit' to quit")
                 continue
             except EOFError:
-                print("\nAu revoir!")
+                print("\nGoodbye!")
                 break
                 
     def show_welcome(self):
-        """Afficher le message de bienvenue"""
+        """Display welcome message"""
         print(f"""
 ╔══════════════════════════════════════╗
 ║     El Programming Language v{__version__}   ║
 ╚══════════════════════════════════════╝
 
-Tapez 'help' pour l'aide, 'exit' pour quitter
-Créé par {__author__}
+Type 'help' for help, 'exit' to quit
+Created by {__author__}
 """)
     
     def show_help(self):
-        """Afficher l'aide"""
+        """Display help"""
         help_text = """
-Commandes El REPL:
-  help      - Afficher cette aide
-  version   - Afficher la version
-  clear     - Effacer l'écran
-  history   - Afficher l'historique des commandes
-  exit/quit - Quitter le REPL
+El REPL Commands:
+  help      - Show this help
+  version   - Show version
+  clear     - Clear screen
+  history   - Show command history
+  exit/quit - Exit REPL
 
-Syntaxe El Language:
+El Language Syntax:
   Variables:  var x: integer = 5;
-  Fonctions:  function add(a: integer, b: integer): integer { return a + b; }
-  Affichage:  show "Hello, World!";
-  Boucles:    for i: integer = 0; i < 10; i = i + 1 { show i; }
+  Functions:  function add(a: integer, b: integer): integer { return a + b; }
+  Display:    show "Hello, World!";
+  Loops:      for i: integer = 0; i < 10; i = i + 1 { show i; }
   
-Documentation complète:https://github.com/Daftyon/Easier-language
+Complete documentation: https://github.com/Daftyon/Easier-language
 """
         print(help_text)
     
     def show_version(self):
-        """Afficher la version"""
+        """Display version"""
         print(f"El Programming Language v{__version__}")
-        print(f"Créé par {__author__}")
+        print(f"Created by {__author__}")
     
     def clear_screen(self):
-        """Effacer l'écran"""
+        """Clear screen"""
         os.system('cls' if os.name == 'nt' else 'clear')
     
     def show_history(self):
-        """Afficher l'historique"""
+        """Display history"""
         if not self.history:
-            print("Aucun historique disponible")
+            print("No history available")
             return
         
-        print("Historique des commandes:")
+        print("Command history:")
         for i, cmd in enumerate(self.history[-10:], 1):
             print(f"  {i}: {cmd}")
     
     def exit_repl(self):
-        """Quitter le REPL"""
-        print("Au revoir!")
+        """Exit REPL"""
+        print("Goodbye!")
         sys.exit(0)
 
 def show_banner():
-    """Afficher la bannière El"""
+    """Display El banner"""
     banner = f"""
     ███████╗██╗         ██╗      █████╗ ███╗   ██╗ ██████╗ 
     ██╔════╝██║         ██║     ██╔══██╗████╗  ██║██╔════╝ 
@@ -148,31 +148,31 @@ def show_banner():
     ╚══════╝╚══════╝    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
     
                     Version {__version__}
-          Un langage de programmation moderne et facile
+          A modern and easy programming language
     """
     print(banner)
 
 def main():
-    """Point d'entrée principal"""
+    """Main entry point"""
     parser = argparse.ArgumentParser(
-        description='El Programming Language - Un langage moderne et facile',
+        description='El Programming Language - A modern and easy language',
         prog='el',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Exemples d'utilisation:
-  el                          Démarrer le mode interactif
-  el hello.el                 Exécuter un fichier El
-  el -c "show 'Hello';"       Exécuter du code directement
-  el --version                Afficher la version
+Usage examples:
+  el                          Start interactive mode
+  el hello.el                 Execute an El file
+  el -c "show 'Hello';"       Execute code directly
+  el --version                Show version
   
-Documentation:https://github.com/Daftyon/Easier-language
+Documentation: https://github.com/Daftyon/Easier-language
         """
     )
     
     parser.add_argument(
         'file', 
         nargs='?', 
-        help='Fichier source El (.el)'
+        help='El source file (.el)'
     )
     
     parser.add_argument(
@@ -184,24 +184,24 @@ Documentation:https://github.com/Daftyon/Easier-language
     parser.add_argument(
         '-i', '--interactive', 
         action='store_true',
-        help='Démarrer le mode interactif (REPL)'
+        help='Start interactive mode (REPL)'
     )
     
     parser.add_argument(
         '-c', '--code', 
-        help='Exécuter du code El depuis la ligne de commande'
+        help='Execute El code from command line'
     )
     
     parser.add_argument(
         '--banner', 
         action='store_true',
-        help='Afficher la bannière El'
+        help='Display El banner'
     )
     
     parser.add_argument(
         '--debug', 
         action='store_true',
-        help='Mode debug avec informations détaillées'
+        help='Debug mode with detailed information'
     )
     
     args = parser.parse_args()
@@ -212,50 +212,50 @@ Documentation:https://github.com/Daftyon/Easier-language
             return
             
         if args.interactive or (not args.file and not args.code):
-            # Mode interactif par défaut
+            # Interactive mode by default
             repl = ElREPL()
             repl.start()
             
         elif args.code:
-            # Exécuter du code depuis la ligne de commande
+            # Execute code from command line
             if args.debug:
-                print(f"Exécution du code: {args.code}")
+                print(f"Executing code: {args.code}")
             El.compile(args.code)
                 
         elif args.file:
-            # Exécuter un fichier
+            # Execute a file
             file_path = Path(args.file)
             
-            # Ajouter l'extension .el si nécessaire
+            # Add .el extension if necessary
             if not file_path.suffix:
                 file_path = file_path.with_suffix('.el')
             
             if not file_path.exists():
-                print(f"Erreur: Fichier '{file_path}' non trouvé")
+                print(f"Error: File '{file_path}' not found")
                 sys.exit(1)
             
             try:
                 if args.debug:
-                    print(f"Exécution du fichier: {file_path}")
+                    print(f"Executing file: {file_path}")
                 
-                # Lire et compiler le fichier
+                # Read and compile the file
                 with open(file_path, 'r', encoding='utf-8') as f:
                     code = f.read()
                 El.compile(code)
                     
             except IOError as e:
-                print(f"Erreur de lecture du fichier: {e}")
+                print(f"File read error: {e}")
                 sys.exit(1)
             
     except KeyboardInterrupt:
-        print("\nInterrompu par l'utilisateur")
+        print("\nInterrupted by user")
         sys.exit(1)
     except Exception as e:
         if args.debug:
             import traceback
             traceback.print_exc()
         else:
-            print(f"Erreur: {e}")
+            print(f"Error: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':

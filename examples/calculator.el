@@ -1,12 +1,16 @@
-ALGORITHM example
-{
-    var x, y, counter : integer;
-    x = 0;
-    counter = 0;
-
-    WHILE counter <= 10 DO {
-        SHOW(x);
-        x = x + 1;
-        counter = counter + 1; 
+program calculator {
+    function add(a: integer, b: integer): integer {
+        return a + b;
     }
+    
+    function multiply(a: integer, b: integer): integer {
+        return a * b;
+    }
+    
+    var x: integer = 10;
+    var y: integer = 5;
+    
+    show "El Calculator";
+    show x + " + " + y + " = " + add(x, y);
+    show x + " * " + y + " = " + multiply(x, y);
 }

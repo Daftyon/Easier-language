@@ -6,5 +6,8 @@ program fibonacci {
         return fib(n - 1) + fib(n - 2);
     }
     
-    show "Fibonacci: " + fib(7);
+    show "Fibonacci Sequence:";
+    for i: integer = 0; i < 10; i = i + 1 {
+        show "F(" + i + ") = " + fib(i);
+    }
 }

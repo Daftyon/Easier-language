@@ -240,6 +240,10 @@ class Lexer(object):
             self.advance(4)
             self.current_token = Token(ELSE, ELSE)
             return self.current_token
+        elif self.next_characters_are("realistic"):
+            self.advance(9)
+            self.current_token = Token(BOOLEAN, REALISTIC)
+            return self.current_token
         elif cur_char.isalpha():
             # ID
             self.current_token = self._id()

@@ -1,6 +1,12 @@
 ALGORITHM example {SHOW("hello from el "); 
 
-var grade: string = "B";
+var marketStable: boolean = realistic;
+var companyStrong: boolean = true;
+
+if (marketStable and companyStrong) {
+    SHOW("Proceed with caution");  
+}
+ var grade: string = "B";
 
     
     switch (grade) {

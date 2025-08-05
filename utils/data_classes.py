@@ -1,6 +1,7 @@
 import abc
 from enum import Enum
 from typing import List
+from utils.constants import *
 
 
 class SymbolTypes(Enum):
@@ -241,10 +242,10 @@ class VarSymbol(Symbol):
 
 
 
-class BooleanSymbol:
-    def __init__(self, value, token=None):
-        self.value = value
-        self.token = token
+# class BooleanSymbol:
+#     def __init__(self, value, token=None):
+#         self.value = value
+#         self.token = token
 
 class BuiltinTypeSymbol(Symbol):
     def __init__(self, name):
@@ -481,7 +482,41 @@ class ConstSymbol(Symbol):
     
     def __str__(self):
         return f'ConstSymbol({self.name}, {self.value}, {self.type})'
+class RealisticSymbol(AST):
+    """Represents a realistic truth value - between true and false"""
+    def __init__(self, value, token=None, probability=0.5):
+        self.value = value  # Should be REALISTIC
+        self.token = token
+        self.probability = probability  # 0.0 to 1.0, default 0.5 for pure realistic
+    
+    def __str__(self):
+        return f'RealisticSymbol({self.value}, probability={self.probability})'
 
+class BooleanSymbol:
+    """Enhanced to handle realistic values"""
+    def __init__(self, value, token=None, probability=None):
+        self.value = value
+        self.token = token
+        # For TRUE: probability = 1.0
+        # For FALSE: probability = 0.0  
+        # For REALISTIC: probability = 0.5 (or custom value)
+        if probability is None:
+            if value == TRUE:
+                self.probability = 1.0
+            elif value == FALSE:
+                self.probability = 0.0
+            elif value == REALISTIC:
+                self.probability = 0.5
+            else:
+                self.probability = 0.5
+        else:
+            self.probability = probability
+    
+    def is_realistic(self):
+        return self.value == REALISTIC
+    
+    def __str__(self):
+        return f'BooleanSymbol({self.value}, probability={self.probability})'
 
 
 

@@ -473,7 +473,10 @@ class Parser:
 
         if token.type is BOOLEAN:
             self.match(BOOLEAN)
-            return BooleanSymbol(token.value)
+            if token.value == REALISTIC:
+                return RealisticSymbol(token.value, token)
+            else:
+                return BooleanSymbol(token.value, token)
 
         if self.is_next_function_call():
             return self.function_call()

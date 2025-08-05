@@ -197,6 +197,10 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         return returns
 
     @staticmethod
+    def visit_RealisticSymbol(node: RealisticSymbol):
+        """Return realistic value"""
+        return node.value
+    @staticmethod
     def visit_BooleanSymbol(node: BooleanSymbol):
         return node.value
 
@@ -208,7 +212,7 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
 
     def visit_NotOp(self, node: NotOp):
         val = self.visit(node.expr)
-        return not_bool(val)
+        return realistic_not(val)
 
     def visit_BoolNotEqual(self, node: BoolNotEqual):
         left = self.visit(node.left)
@@ -218,12 +222,12 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
     def visit_BoolOr(self, node: BoolOr):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        return bool_or(left, right)
+        return realistic_or(left, right)
 
     def visit_BoolAnd(self, node: BoolAnd):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        return bool_and(left, right)
+        return realistic_and(left, right)
 
     def visit_BoolGreaterThan(self, node: BoolGreaterThan):
         left = self.visit(node.left)
@@ -261,12 +265,34 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
 
     def visit_IfStat(self, node: IfStat):
         for if_block in node.if_blocks:
-            visited: bool = self.visit(if_block)
-            if visited is True:
+            condition_result = self.visit(if_block.expr)
+            
+            # Handle realistic conditions
+            if condition_result == REALISTIC:
+                # For realistic values, we can implement different strategies:
+                # Strategy 1: Always execute (optimistic)
+                # Strategy 2: Never execute (pessimistic)  
+                # Strategy 3: Random based on probability
+                # Strategy 4: Ask user/configuration
+                
+                # Default strategy: Execute if probability > 0.5
+                if self.should_execute_realistic_condition():
+                    self.define_new_scope()
+                    self.visit(if_block.block)
+                    self.destroy_current_scope()
+                    return
+            elif condition_result == TRUE:
+                self.define_new_scope()
+                self.visit(if_block.block)
+                self.destroy_current_scope()
                 return
         if node.else_block is not None:
             self.visit(node.else_block)
-
+    def should_execute_realistic_condition(self):
+        """Strategy for handling realistic conditions in if statements"""
+        # Default: treat realistic as true (optimistic approach)
+        # This could be configurable or based on probability
+        return True
     def visit_Break(self, node: Break):
         """Handle break statement - works in both for-loops and switch statements"""
         if len(self.call_stack) < 1:

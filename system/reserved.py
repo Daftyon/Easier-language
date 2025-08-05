@@ -33,6 +33,5 @@ RESERVED_KEYWORDS = {
     DEFAULT: Token(DEFAULT, DEFAULT),
     CONST: Token(CONST, CONST),
     REALISTIC: Token(BOOLEAN, REALISTIC),  # Treat as boolean type but with realistic value
-    TERNARY: Token(TERNARY, TERNARY),     # New ternary type
 
 }

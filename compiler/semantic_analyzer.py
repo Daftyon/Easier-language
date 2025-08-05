@@ -1,4 +1,4 @@
-from utils.constants import BOOLEAN, PLUS, SHOW, TRUE, FALSE
+from utils.constants import BOOLEAN, PLUS, SHOW, TRUE, FALSE,REALISTIC
 from system.builtin_functions.main import is_system_function
 from utils.data_classes import *
 from utils.errors import SemanticError, ErrorCode
@@ -132,8 +132,18 @@ class SemanticAnalyzer(NodeVisitor):
             self.error(ErrorCode.ID_NOT_FOUND, "function {} is not defined".format(node.name))
 
     def visit_BooleanSymbol(self, node: BooleanSymbol):
-        if node.value not in (TRUE, FALSE):
-            self.error(ErrorCode.SEMANTIC_ERROR, "BooleanSymbol got value {}".format(node.value))
+        """Enhanced to handle realistic values"""
+        if node.value not in (TRUE, FALSE, REALISTIC):
+            self.error(ErrorCode.SEMANTIC_ERROR, "BooleanSymbol got invalid value {}".format(node.value))
+            
+    def visit_RealisticSymbol(self, node: RealisticSymbol):
+        """Validate realistic symbol"""
+        if node.value != REALISTIC:
+            self.error(ErrorCode.SEMANTIC_ERROR, "RealisticSymbol must have REALISTIC value")
+        
+        # Validate probability range
+        if hasattr(node, 'probability') and (node.probability < 0.0 or node.probability > 1.0):
+            self.error(ErrorCode.SEMANTIC_ERROR, "Realistic probability must be between 0.0 and 1.0")
 
     def visit_BoolOp(self, node: BoolOp):
         self.visit(node.left)

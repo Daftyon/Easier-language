@@ -1,4 +1,4 @@
-from utils.constants import TRUE, FALSE, OR, AND, INTEGER, REAL, STRING, BOOLEAN, FLOAT
+from utils.constants import TRUE, FALSE, OR, AND, INTEGER, REAL, STRING, BOOLEAN, FLOAT,REALISTIC
 
 _delta_for_floats = 1 / 1e8
 
@@ -75,7 +75,10 @@ def is_val_of_type(val, base_type):
         return isinstance(val, str)
     elif base_type is BOOLEAN:
         try:
-            return str(val).lower() in (TRUE.lower(), FALSE.lower())
+            if isinstance(val, str):
+                val_upper = val.upper()
+                return val_upper in ["TRUE", "FALSE", "REALISTIC"]
+            return val in ["TRUE", "FALSE", "REALISTIC"]
         except Exception as e:
             return False
 
@@ -145,10 +148,88 @@ def bool_less_than_or_equal(left, right):
 
 
 def bool_is_equal(left, right):
+    """Enhanced equality for realistic values"""
     try:
+        # Handle realistic comparisons
+        if isinstance(left, str) and left == REALISTIC:
+            return realistic_equal(left, right)
+        if isinstance(right, str) and right == REALISTIC:
+            return realistic_equal(left, right)
+        
+        # Normal comparison
         flag = left == right
         if flag is True:
             return TRUE
         return FALSE
     except Exception as e:
+        return REALISTIC  # When uncertain, return realistic
+
+def realistic_not(bool_val):
+    """NOT operation for three-valued logic"""
+    if bool_val == TRUE:
         return FALSE
+    elif bool_val == FALSE:
+        return TRUE
+    elif bool_val == REALISTIC:
+        return REALISTIC  # NOT realistic = realistic
+    else:
+        raise ValueError("Invalid boolean value for NOT operation")
+
+def realistic_or(left, right):
+    """OR operation for three-valued logic"""
+    # Truth table for realistic OR:
+    # TRUE OR anything = TRUE
+    # FALSE OR FALSE = FALSE
+    # FALSE OR REALISTIC = REALISTIC
+    # FALSE OR TRUE = TRUE
+    # REALISTIC OR REALISTIC = REALISTIC
+    
+    if left == TRUE or right == TRUE:
+        return TRUE
+    elif left == FALSE and right == FALSE:
+        return FALSE
+    elif left == REALISTIC or right == REALISTIC:
+        return REALISTIC
+    else:
+        raise ValueError("Invalid boolean values for OR operation")
+
+def realistic_and(left, right):
+    """AND operation for three-valued logic"""
+    # Truth table for realistic AND:
+    # FALSE AND anything = FALSE
+    # TRUE AND TRUE = TRUE
+    # TRUE AND REALISTIC = REALISTIC
+    # TRUE AND FALSE = FALSE
+    # REALISTIC AND REALISTIC = REALISTIC
+    
+    if left == FALSE or right == FALSE:
+        return FALSE
+    elif left == TRUE and right == TRUE:
+        return TRUE
+    elif left == REALISTIC or right == REALISTIC:
+        return REALISTIC
+    else:
+        raise ValueError("Invalid boolean values for AND operation")
+
+def realistic_equal(left, right):
+    """Equality comparison with realistic values"""
+    if left == right:
+        return TRUE
+    elif left == REALISTIC or right == REALISTIC:
+        return REALISTIC  # Uncertain equality
+    else:
+        return FALSE
+
+def realistic_not_equal(left, right):
+    """Not equal comparison with realistic values"""
+    equality_result = realistic_equal(left, right)
+    return realistic_not(equality_result)
+def bool_not_equal(left, right):
+    """Enhanced not equal for realistic values"""
+    try:
+        equality_result = bool_is_equal(left, right)
+        if equality_result == REALISTIC:
+            return REALISTIC
+        return realistic_not(equality_result)
+    except Exception as e:
+        return REALISTIC

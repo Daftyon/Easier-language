@@ -416,6 +416,73 @@ class ArrayAccess(AST):
 
     def __str__(self):
         return f'ArrayAccess({self.array_var}, {self.index})'
+class CaseBlock(AST):
+    """Represents a single case block in a switch statement"""
+    def __init__(self, value, statements):
+        self.value = value  # The value to match against (can be None for default)
+        self.statements = statements  # List of statements to execute
+        self.is_default = value is None
+    
+    def __str__(self):
+        if self.is_default:
+            return f'DefaultCase({self.statements})'
+        return f'CaseBlock({self.value}, {self.statements})'
+
+class SwitchStatement(AST):
+    """Represents a complete switch statement"""
+    def __init__(self, expression, case_blocks):
+        self.expression = expression  # Expression to evaluate and match
+        self.case_blocks = case_blocks  # List of CaseBlock objects
+        
+    def get_default_case(self):
+        """Returns the default case block if it exists"""
+        for case in self.case_blocks:
+            if case.is_default:
+                return case
+        return None
+    
+    def get_case_blocks(self):
+        """Returns non-default case blocks"""
+        return [case for case in self.case_blocks if not case.is_default]
+    
+    def __str__(self):
+        cases_str = ", ".join(str(case) for case in self.case_blocks)
+        return f'SwitchStatement({self.expression}, [{cases_str}])'
+class ConstDeclaration(AST):
+    """Represents a constant declaration"""
+    def __init__(self, variables, base_type: Token, value):
+        self.variables = variables  # List of variable tokens
+        self.token = self.type = base_type
+        self.value = value  # Required value (constants must be initialized)
+        
+    def get_declarations(self):
+        return self.variables
+    
+    def get_type(self) -> Token:
+        return self.type
+    
+    def get_value(self):
+        return self.value
+    
+    def get_var_names(self):
+        return ", ".join([token.value for token in self.variables])
+    
+    def __str__(self):
+        res = ""
+        for var in self.variables:
+            res += var.value + ', '
+        return f'ConstDeclaration(({res}), {self.type.value}, {self.value})'
+
+class ConstSymbol(Symbol):
+    """Symbol representing a constant - immutable after initialization"""
+    def __init__(self, name, value, base_type=None):
+        super().__init__(name, value, base_type)
+        self.is_constant = True
+    
+    def __str__(self):
+        return f'ConstSymbol({self.name}, {self.value}, {self.type})'
+
+
 
 
 

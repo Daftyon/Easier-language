@@ -265,7 +265,9 @@ class Parser:
                or self.is_do_while_loop() \
                or self.is_break() \
                 or self.is_return_stat()\
-                or self.is_show() 
+                or self.is_show()\
+                or self.is_switch_statement()  # Add this line
+
 
     def statement_list(self):
         children = []
@@ -333,6 +335,8 @@ class Parser:
             return self.emtpy()
         elif self.is_import_statement():
             return self.import_statement()
+        elif self.is_switch_statement():
+            return self.switch_statement()
 
         #print(token)
         self.error("should be ID or LPARENT, got {}".format(token))
@@ -630,6 +634,152 @@ class Parser:
         self.match(WHILE)
         condition = self.bool_expr()
         return DoWhileLoop(statements, condition)
+    def is_switch_statement(self):
+        """Check if next tokens form a switch statement"""
+        return self.next_tokens_are(SWITCH)
+    
+    def switch_statement(self):
+        """
+        Grammar:
+        switch_statement: SWITCH LPARENT base_expr RPARENT LCBRACE case_list RCBRACE
+        case_list: case_block+
+        case_block: CASE base_expr COLON statement_list
+                  | DEFAULT COLON statement_list
+        """
+        self.match(SWITCH)
+        self.match(LPARENT)
+        expression = self.base_expr()
+        self.match(RPARENT)
+        self.match(LCBRACE)
+        
+        case_blocks = []
+        
+        # Parse case blocks
+        while self.lexer.get_current_token().type in (CASE, DEFAULT):
+            case_blocks.append(self.case_block())
+        
+        self.match(RCBRACE)
+        return SwitchStatement(expression, case_blocks)
+    
+    def case_block(self):
+        """Parse a single case or default block"""
+        token = self.lexer.get_current_token()
+        
+        if token.type == CASE:
+            self.match(CASE)
+            value = self.base_expr()
+            self.match(COLON)
+            statements = self.case_statement_list()
+            return CaseBlock(value, statements)
+        
+        elif token.type == DEFAULT:
+            self.match(DEFAULT)
+            self.match(COLON)
+            statements = self.case_statement_list()
+            return CaseBlock(None, statements)  # None indicates default case
+        
+        else:
+            self.error(f"Expected CASE or DEFAULT, got {token.type}")
+    
+    def case_statement_list(self):
+        """Parse statements within a case block until next case/default/closing brace"""
+        statements = []
+        
+        while (self.lexer.get_current_token().type not in (CASE, DEFAULT, RCBRACE) 
+               and self.lexer.get_current_token().type != EOF):
+            if self.is_compound_statement():
+                stmt = self.statement()
+                if isinstance(stmt, list):
+                    statements.extend(stmt)
+                else:
+                    statements.append(stmt)
+            else:
+                break
+        return statements
+    def is_const_declaration(self):
+            """Check if next tokens form a constant declaration"""
+            return self.next_tokens_are(CONST)
+    
+    def const_declaration(self):
+        """
+        Grammar:
+        const_declaration: CONST ID (COMMA ID)* COLON base_type ASSIGN base_expr
+        
+        Note: Constants MUST be initialized with a value
+        """
+        self.match(CONST)
+        
+        variables = []
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected identifier after CONST, got: ' + self.lexer.get_current_token().type)
+
+        variables.append(self.lexer.get_current_token())
+        self.lexer.go_forward()
+
+        # Handle multiple constants: const x, y, z: integer = 5;
+        while self.lexer.get_current_token().type is COMMA:
+            self.lexer.go_forward()
+            var = self.lexer.get_current_token()
+            if var.type is not ID:
+                self.error('Expected identifier after comma, got: ' + self.lexer.get_current_token().type)
+            variables.append(var)
+            self.lexer.go_forward()
+
+        self.match(COLON)
+        base_type = self.base_type()
+
+        # Constants MUST have a value
+        if not self.next_token_is(ASSIGN):
+            self.error('Constants must be initialized with a value')
+        
+        self.match(ASSIGN)
+        val = self.base_expr()
+
+        return ConstDeclaration(variables, base_type, val)
+    
+    def is_declaration(self):
+        """Updated to include const declarations"""
+        token = self.lexer.get_current_token()
+        return token.type in (VAR, FUNCTION, CONST)
+    
+    def declarations(self) -> list:
+        """Updated declarations method to handle constants"""
+        declarations = []
+        
+        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST):
+            # Handle variable declarations
+            if self.lexer.get_current_token().type is VAR:
+                self.match(VAR)
+                while self.next_tokens_are(ID, COMMA) or self.next_tokens_are(ID, COLON):
+                    declarations.append(self.variable_declaration())
+                    self.match(SEMI)
+            
+            # Handle constant declarations
+            elif self.lexer.get_current_token().type is CONST:
+                declarations.append(self.const_declaration())
+                self.match(SEMI)
+            
+            # Handle function declarations
+            while self.lexer.get_current_token().type is FUNCTION:
+                self.match(FUNCTION)
+                proc_name = self.lexer.get_current_token().value
+                self.match(ID)
+
+                parameters_list = []
+                if self.lexer.current_token.type is LPARENT:
+                    self.match(LPARENT)
+                    parameters_list = self.parameters_list()
+                    self.match(RPARENT)
+
+                self.match(LCBRACE)
+                block = self.function_block()
+                self.match(RCBRACE)
+
+                function_decl = FunctionDecl(proc_name, parameters_list, block)
+                declarations.append(function_decl)
+
+        return declarations    
+    
 
     
 

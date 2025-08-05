@@ -38,6 +38,7 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         result = self.visit(node.expression)
         print(result)  # Assuming you want to print the result of the expression
         return result
+    
     def visit_WhileLoop(self, node):
         while self.visit(node.condition) == TRUE:
             self.define_new_scope()
@@ -267,11 +268,14 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             self.visit(node.else_block)
 
     def visit_Break(self, node: Break):
+        """Handle break statement - works in both for-loops and switch statements"""
         if len(self.call_stack) < 1:
-            self.error("Break is used outside of for-loop (0 len)")
+            self.error("Break statement used outside of loop or switch")
+        
         last_node = self.call_stack[-1]
-        if last_node is not FOR:
-            self.error("Break is used outside of for-loop")
+        if last_node not in (FOR, SWITCH):
+            self.error(f"Break statement used outside of loop or switch context")
+        
         self.terminated_call_stack.append(BREAK)
         return None
 
@@ -340,3 +344,111 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.function_return_stat_list.append(node)
     def interpret(self):
         return self.visit(self.tree)
+    def visit_SwitchStatement(self, node: SwitchStatement):
+        self.call_stack.append(SWITCH) 
+        """Execute switch statement with fall-through behavior"""
+        switch_value = self.visit(node.expression)
+        
+        # Find matching case or default
+        matched_case = None
+        default_case = node.get_default_case()
+        
+        # Look for exact match first
+        for case_block in node.get_case_blocks():
+            case_value = self.visit(case_block.value)
+            if self.values_equal(switch_value, case_value):
+                matched_case = case_block
+                break
+        
+        # If no match found, use default case
+        if matched_case is None:
+            matched_case = default_case
+        
+        # Execute matched case and handle fall-through
+        if matched_case is not None:
+            self.execute_switch_cases(node.case_blocks, matched_case)
+
+    def execute_switch_cases(self, all_cases, start_case):
+        """Execute cases starting from matched case with fall-through"""
+        start_executing = False
+        
+        for case_block in all_cases:
+            # Start executing from the matched case
+            if case_block == start_case:
+                start_executing = True
+            
+            if start_executing:
+                # Create new scope for each case block
+                self.define_new_scope()
+                
+                # Execute all statements in this case
+                for statement in case_block.statements:
+                    self.visit(statement)
+                    
+                    # Check for break statement to exit switch
+                    if self.is_terminated() and len(self.terminated_call_stack) > 0:
+                        terminated_by = self.terminated_call_stack[-1]
+                        if terminated_by == BREAK:
+                            # Remove break from stack and exit switch
+                            self.terminated_call_stack.pop()
+                            self.destroy_current_scope()
+                            return
+                
+                self.destroy_current_scope()
+    def values_equal(self, val1, val2):
+        """Compare two values for equality in switch context"""
+        try:
+            # Handle different types appropriately
+            if type(val1) == type(val2):
+                return val1 == val2
+            
+            # Try numeric comparison
+            if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+                return float(val1) == float(val2)
+            
+            # String comparison
+            return str(val1) == str(val2)
+        except:
+            return False
+    def visit_CaseBlock(self, node: CaseBlock):
+            """Visit individual case block (called during semantic analysis)"""
+            for statement in node.statements:
+                self.visit(statement)
+    def visit_ConstDeclaration(self, node: ConstDeclaration):
+        """Execute constant declaration"""
+        declarations = node.get_declarations()
+        base_type = node.get_type().value
+        val = self.visit(node.get_value())
+
+        # Type checking for constant value
+        if val is not None:
+            if not self.can_assign(base_type, val):
+                self.can_not_assign_error(node.get_var_names(), val, base_type)
+
+        # Define constant symbols
+        for var in declarations:
+            symbol = ConstSymbol(var.value, val, base_type)
+            self.symbol_table.define(symbol)
+    
+    def visit_Assign(self, node: Assign):
+        """Enhanced assignment to prevent constant modification"""
+        var_name = node.left.value
+        value = self.visit(node.right)
+
+        if self.symbol_table.is_defined(var_name):
+            symbol: Symbol = self.symbol_table.lookup(var_name)
+            
+            # Prevent assignment to constants
+            if isinstance(symbol, ConstSymbol):
+                self.error(f"Cannot assign to constant '{var_name}'. Constants are immutable.")
+            
+            # Type checking for variables
+            base_type = symbol.type
+            if not self.can_assign(base_type, value):
+                self.can_not_assign_error(var_name, value, symbol.type)
+            
+            return self.symbol_table.assign(var_name, Symbol(var_name, value, base_type))
+        else:
+            raise ValueError(f"Variable {var_name} is not defined")
+    
+    

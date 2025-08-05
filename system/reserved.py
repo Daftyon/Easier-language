@@ -28,5 +28,11 @@ RESERVED_KEYWORDS = {
     OBJECT: Token(OBJECT, OBJECT),
     SHOW: Token(SHOW, SHOW),
     INVOLVE: Token(INVOLVE, INVOLVE),
+    SWITCH: Token(SWITCH, SWITCH),
+    CASE: Token(CASE, CASE),
+    DEFAULT: Token(DEFAULT, DEFAULT),
+    CONST: Token(CONST, CONST),
+    REALISTIC: Token(BOOLEAN, REALISTIC),  # Treat as boolean type but with realistic value
+    TERNARY: Token(TERNARY, TERNARY),     # New ternary type
 
 }

@@ -1,4 +1,4 @@
-ALGORITHM fibonacci {
+program fibonacci {
     function fib(n: integer): integer {
         if n <= 1 {
             return n;

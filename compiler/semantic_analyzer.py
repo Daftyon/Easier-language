@@ -208,3 +208,81 @@ class SemanticAnalyzer(NodeVisitor):
 
     def analyze(self):
         return self.visit(self.tree)
+    def visit_SwitchStatement(self, node: SwitchStatement):
+            """Semantic analysis for switch statement"""
+            # Analyze the switch expression
+            self.visit(node.expression)
+            
+            # Check for duplicate case values
+            case_values = []
+            default_count = 0
+            
+            for case_block in node.case_blocks:
+                if case_block.is_default:
+                    default_count += 1
+                    if default_count > 1:
+                        self.error(ErrorCode.SEMANTIC_ERROR, 
+                                "Multiple default cases in switch statement")
+                else:
+                    # Visit the case value expression
+                    self.visit(case_block.value)
+                    
+                    # Check for duplicate case values (simplified check)
+                    case_values.append(case_block.value)
+                
+                # Analyze statements in the case block
+                self.visit_list(case_block.statements)
+    
+    def visit_CaseBlock(self, node: CaseBlock):
+        """Semantic analysis for individual case blocks"""
+        if not node.is_default and node.value is not None:
+            self.visit(node.value)
+        
+        # Analyze all statements in the case block
+        for statement in node.statements:
+            self.visit(statement)
+    def visit_ConstDeclaration(self, node: ConstDeclaration):
+        """Semantic analysis for constant declarations"""
+        declarations = node.get_declarations()
+        symbol_type = node.get_type()
+        val = node.get_value()
+        
+        # Constants must have a value
+        if val is None:
+            self.error(ErrorCode.SEMANTIC_ERROR, "Constants must be initialized with a value")
+        
+        # Validate the constant value expression
+        self.visit(val)
+        
+        # Define constant symbols in symbol table
+        for var in declarations:
+            # Check if already defined
+            if self.symbol_table.is_defined(var.value):
+                existing_symbol = self.symbol_table.lookup(var.value)
+                if isinstance(existing_symbol, ConstSymbol):
+                    self.error(ErrorCode.DUPLICATE_ID, f"Constant {var.value} is already defined")
+                else:
+                    self.error(ErrorCode.DUPLICATE_ID, f"Identifier {var.value} is already defined as variable")
+            
+            symbol = ConstSymbol(var.value, val, symbol_type.value)
+            self.symbol_table.define(symbol)
+    
+    def visit_Assign(self, node: Assign):
+        """Enhanced assignment validation to prevent const modification"""
+        var_name = node.left.value
+        self.visit(node.right)
+
+        if self.symbol_table.is_defined(var_name):
+            symbol = self.symbol_table.lookup(var_name)
+            
+            # Check if trying to assign to a constant
+            if isinstance(symbol, ConstSymbol):
+                self.error(ErrorCode.SEMANTIC_ERROR, 
+                         f"Cannot assign to constant '{var_name}'. Constants are immutable.")
+            
+            return None
+        else:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, message=f"Variable {var_name} is not defined")
+
+    
+   

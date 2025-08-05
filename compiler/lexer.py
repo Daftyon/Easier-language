@@ -325,6 +325,23 @@ class Lexer(object):
             self.advance()
             self.current_token = Token(NOT, NOT)
             return self.current_token
+        elif self.next_characters_are("switch"):
+            self.advance(6)
+            self.current_token = Token(SWITCH, SWITCH)
+            return self.current_token
+        elif self.next_characters_are("case"):
+            self.advance(4)
+            self.current_token = Token(CASE, CASE)
+            return self.current_token
+        elif self.next_characters_are("default"):
+            self.advance(7)
+            self.current_token = Token(DEFAULT, DEFAULT)
+            return self.current_token
+        elif self.next_characters_are("const"):
+            self.advance(5)
+            self.current_token = Token(CONST, CONST)
+            return self.current_token
+            
         else:
             if cur_char.isspace():
                 while self.get_current_character() is not None and self.get_current_character().isspace():

@@ -1,4 +1,4 @@
-ALGORITHM hello_world {
+program hello_world {
     show "Hello, World!";
-    show "Welcome to El ALGORITHMming Language!";
+    show "Welcome to El Programming Language!";
 }

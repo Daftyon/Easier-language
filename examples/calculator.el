@@ -1,4 +1,4 @@
-ALGORITHM calculator {
+program calculator {
     function add(a: integer, b: integer): integer {
         return a + b;
     }

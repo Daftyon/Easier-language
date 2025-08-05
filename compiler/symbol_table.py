@@ -50,3 +50,16 @@ class SymbolTable:
         for symbol in self._symbols.values():
             res += str(symbol) + ","
         return f"SymbolTable({res})"
+    def assign(self, var: str, value: Symbol):
+            """Enhanced assign method to handle constants"""
+            if var in self._symbols:
+                existing_symbol = self._symbols[var]
+                
+                # Prevent modification of constants
+                if isinstance(existing_symbol, ConstSymbol):
+                    raise ValueError(f"Cannot modify constant '{var}'")
+                
+                self._symbols[var] = value
+            else:
+                scope: SymbolTable = self.get_var_scope(self, var)
+                scope.assign(var, value)

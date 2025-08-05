@@ -11,7 +11,12 @@ class ErrorCode(Enum):
     INTERPRETER_ERROR = "Interpreter error"
     NUMBER_OF_ARGUMENTS_MISMATCH_ERROR = "Arguments error"
     WHILE_LOOP_CONDITION_BOOL = "while loop condition must be boolean"
-
+    MULTIPLE_DEFAULT_CASES = "Multiple default cases in switch"
+    DUPLICATE_CASE_VALUES = "Duplicate case values in switch"
+    SWITCH_CASE_TYPE_MISMATCH = "Case value type doesn't match switch expression"
+    CONST_NOT_INITIALIZED = "Constant must be initialized"
+    CONST_MODIFICATION = "Cannot modify constant value"
+    CONST_REDEFINITION = "Constant already defined"
 
 class Error(Exception):
     def __init__(self, error_code, message):

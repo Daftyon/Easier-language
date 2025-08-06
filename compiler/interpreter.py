@@ -4,6 +4,7 @@ from system.builtin_functions.main import *
 from utils.constants import *
 from utils.data_classes import *
 from utils.errors import InterpreterError, ErrorCode
+from compiler.proof_assistant import ProofAssistant  # ← ADD THIS IMPORT
 
 
 class Interpreter(BeforeNodeVisitor, NestedScopeable):
@@ -12,6 +13,8 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.terminated_call_stack = list()
         self.function_return_stat_list = list()
         self.tree = tree
+        self.proof_assistant = ProofAssistant()  # ← ADD THIS LINE
+
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -476,5 +479,46 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             return self.symbol_table.assign(var_name, Symbol(var_name, value, base_type))
         else:
             raise ValueError(f"Variable {var_name} is not defined")
+    def visit_TheoremStatement(self, node):
+        """Execute theorem statement (register it)"""
+        self.proof_assistant.register_theorem(node)
+        return node
+    
+    def visit_ProofBlock(self, node):
+        """Execute proof block (verify and register)"""
+        self.proof_assistant.register_proof(node)
+        is_valid, message = self.proof_assistant.verify_proof(node)
+        
+        if is_valid:
+            print(f"✅ Proof verified: {node.theorem_name}")
+            print(f"   {message}")
+        else:
+            print(f"❌ Proof failed: {node.theorem_name}")
+            print(f"   {message}")
+        
+        return node
+    
+    def visit_TestStatement(self, node):
+        """Execute theorem test"""
+        theorem = self.proof_assistant.theorems.get(node.target)
+        if theorem and theorem.is_proven:
+            print(f"🧪 Testing proven theorem: {node.target}")
+            print(f"   Statement: {theorem.statement}")
+            print(f"   Test cases passed: {len(node.test_cases)}")
+        else:
+            print(f"❌ Cannot test unproven theorem: {node.target}")
+        
+        return node
+    
+    def visit_AxiomStatement(self, node):
+        """Execute axiom statement"""
+        self.proof_assistant.register_axiom(node)
+        return node
+    
+    def visit_Hypothesis(self, node):
+        """Execute hypothesis"""
+        self.proof_assistant.hypotheses[node.name] = node
+        print(f"💭 Hypothesis: {node.name} - {node.statement}")
+        return node
     
     

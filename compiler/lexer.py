@@ -345,6 +345,66 @@ class Lexer(object):
             self.advance(5)
             self.current_token = Token(CONST, CONST)
             return self.current_token
+        elif self.next_characters_are("theorem"):
+            self.advance(7)
+            self.current_token = Token(THEOREM, THEOREM)
+            return self.current_token
+        elif self.next_characters_are("proof"):
+            self.advance(5)
+            self.current_token = Token(PROOF, PROOF)
+            return self.current_token
+        elif self.next_characters_are("qed"):
+            self.advance(3)
+            self.current_token = Token(QED, QED)
+            return self.current_token
+        elif self.next_characters_are("hypothesis"):
+            self.advance(10)
+            self.current_token = Token(HYPOTHESIS, HYPOTHESIS)
+            return self.current_token
+        elif self.next_characters_are("assume"):
+            self.advance(6)
+            self.current_token = Token(ASSUME, ASSUME)
+            return self.current_token
+        elif self.next_characters_are("given"):
+            self.advance(5)
+            self.current_token = Token(GIVEN, GIVEN)
+            return self.current_token
+        elif self.next_characters_are("therefore"):
+            self.advance(9)
+            self.current_token = Token(THEREFORE, THEREFORE)
+            return self.current_token
+        elif self.next_characters_are("implies"):
+            self.advance(7)
+            self.current_token = Token(IMPLIES, IMPLIES)
+            return self.current_token
+        elif self.next_characters_are("iff"):
+            self.advance(3)
+            self.current_token = Token(IFF, IFF)
+            return self.current_token
+        elif self.next_characters_are("forall"):
+            self.advance(6)
+            self.current_token = Token(FORALL, FORALL)
+            return self.current_token
+        elif self.next_characters_are("exists"):
+            self.advance(6)
+            self.current_token = Token(EXISTS, EXISTS)
+            return self.current_token
+        elif self.next_characters_are("lemma"):
+            self.advance(5)
+            self.current_token = Token(LEMMA, LEMMA)
+            return self.current_token
+        elif self.next_characters_are("axiom"):
+            self.advance(5)
+            self.current_token = Token(AXIOM, AXIOM)
+            return self.current_token
+        elif self.next_characters_are("test"):
+            self.advance(4)
+            self.current_token = Token(TEST, TEST)
+            return self.current_token
+        elif self.next_characters_are("verify"):
+            self.advance(6)
+            self.current_token = Token(VERIFY, VERIFY)
+            return self.current_token
             
         else:
             if cur_char.isspace():

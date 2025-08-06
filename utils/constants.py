@@ -56,3 +56,23 @@ TERNARY = 'TERNARY'  # New type for three-valued logic
 
 
 
+THEOREM = 'THEOREM'
+PROOF = 'PROOF'
+QED = 'QED'  # Quod Erat Demonstrandum - "which was to be demonstrated"
+HYPOTHESIS = 'HYPOTHESIS'
+ASSUME = 'ASSUME'
+GIVEN = 'GIVEN'
+THEREFORE = 'THEREFORE'
+BY = 'BY'
+CONTRADICTION = 'CONTRADICTION'
+INDUCTION = 'INDUCTION'
+CASE = 'CASE'  # Already exists for switch, but also used in proofs
+FORALL = 'FORALL'
+EXISTS = 'EXISTS'
+IMPLIES = 'IMPLIES'
+IFF = 'IFF'  # If and only if
+LEMMA = 'LEMMA'
+COROLLARY = 'COROLLARY'
+AXIOM = 'AXIOM'
+TEST = 'TEST'
+VERIFY = 'VERIFY'

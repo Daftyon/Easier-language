@@ -3,12 +3,15 @@ from system.builtin_functions.main import is_system_function
 from utils.data_classes import *
 from utils.errors import SemanticError, ErrorCode
 from compiler.symbol_table import SymbolTable
+from compiler.proof_assistant import ProofAssistant  # ← ADD THIS IMPORT
 
 
 class SemanticAnalyzer(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
         self.symbol_table = SymbolTable()
+        self.proof_assistant = ProofAssistant()  # ← ADD THIS LINE
+
 
     def error(self, error_code, message):
         raise SemanticError(
@@ -293,6 +296,58 @@ class SemanticAnalyzer(NodeVisitor):
             return None
         else:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, message=f"Variable {var_name} is not defined")
+    def visit_TheoremStatement(self, node):
+        """Semantic analysis for theorem statements"""
+        self.visit(node.statement)
+        self.proof_assistant.register_theorem(node)
+        
+        # Define theorem symbol in symbol table
+        theorem_symbol = Symbol(node.name, node.statement, 'THEOREM')
+        self.symbol_table.define(theorem_symbol)
+    
+    def visit_ProofBlock(self, node):
+        """Semantic analysis for proof blocks"""
+        # Check that theorem exists
+        if node.theorem_name not in [t.name for t in self.proof_assistant.theorems.values()]:
+            self.error(ErrorCode.ID_NOT_FOUND, f"Theorem {node.theorem_name} not found")
+        
+        # Validate each proof step
+        for step in node.steps:
+            self.visit(step)
+        
+        # Register and verify proof
+        self.proof_assistant.register_proof(node)
+        is_valid, message = self.proof_assistant.verify_proof(node)
+        
+        if not is_valid:
+            self.error(ErrorCode.SEMANTIC_ERROR, f"Invalid proof: {message}")
+    
+    def visit_ProofStep(self, node):
+        """Validate individual proof steps"""
+        self.visit(node.statement)
+        if node.justification:
+            self.visit(node.justification)
+    
+    def visit_Hypothesis(self, node):
+        """Validate hypotheses"""
+        self.visit(node.statement)
+        self.proof_assistant.hypotheses[node.name] = node
+    
+    def visit_LogicalExpression(self, node):
+        """Validate logical expressions"""
+        self.visit(node.left)
+        if node.right:
+            self.visit(node.right)
+    
+    def visit_TestStatement(self, node):
+        """Validate test statements"""
+        for test_case in node.test_cases:
+            self.visit(test_case)
+    
+    def visit_AxiomStatement(self, node):
+        """Validate and register axioms"""
+        self.visit(node.statement)
+        self.proof_assistant.register_axiom(node)
 
     
    

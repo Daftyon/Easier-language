@@ -522,3 +522,77 @@ class BooleanSymbol:
 
 
 
+
+class TheoremStatement(AST):
+    """Represents a theorem declaration"""
+    def __init__(self, name, statement, proof=None):
+        self.name = name  # Theorem name
+        self.statement = statement  # The statement to prove
+        self.proof = proof  # Associated proof (optional)
+        self.is_proven = False
+    
+    def __str__(self):
+        return f'Theorem({self.name}, {self.statement}, proven={self.is_proven})'
+
+class ProofBlock(AST):
+    """Represents a proof block with steps"""
+    def __init__(self, theorem_name, steps):
+        self.theorem_name = theorem_name
+        self.steps = steps  # List of proof steps
+        self.is_valid = None  # Will be determined during verification
+    
+    def __str__(self):
+        return f'Proof({self.theorem_name}, {len(self.steps)} steps)'
+
+class ProofStep(AST):
+    """Individual step in a proof"""
+    def __init__(self, step_type, statement, justification=None):
+        self.step_type = step_type  # ASSUME, GIVEN, THEREFORE, etc.
+        self.statement = statement  # The logical statement
+        self.justification = justification  # How this step follows
+    
+    def __str__(self):
+        return f'ProofStep({self.step_type}, {self.statement})'
+
+class Hypothesis(AST):
+    """Represents a hypothesis or assumption"""
+    def __init__(self, name, statement):
+        self.name = name
+        self.statement = statement
+        self.is_assumption = True
+    
+    def __str__(self):
+        return f'Hypothesis({self.name}, {self.statement})'
+
+class LogicalExpression(AST):
+    """Represents logical expressions with quantifiers"""
+    def __init__(self, expr_type, left, right=None, quantifier=None, variable=None):
+        self.expr_type = expr_type  # IMPLIES, IFF, FORALL, EXISTS
+        self.left = left
+        self.right = right
+        self.quantifier = quantifier  # For FORALL/EXISTS
+        self.variable = variable  # Bound variable
+    
+    def __str__(self):
+        if self.quantifier:
+            return f'{self.quantifier}({self.variable}, {self.left})'
+        return f'LogicalExpr({self.expr_type}, {self.left}, {self.right})'
+
+class TestStatement(AST):
+    """Represents a test of a theorem or proof"""
+    def __init__(self, target, test_cases):
+        self.target = target  # What to test (theorem name)
+        self.test_cases = test_cases  # List of test cases
+    
+    def __str__(self):
+        return f'Test({self.target}, {len(self.test_cases)} cases)'
+
+class AxiomStatement(AST):
+    """Represents an axiom (assumed to be true)"""
+    def __init__(self, name, statement):
+        self.name = name
+        self.statement = statement
+        self.is_axiom = True
+    
+    def __str__(self):
+        return f'Axiom({self.name}, {self.statement})'

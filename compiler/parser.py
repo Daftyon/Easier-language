@@ -266,7 +266,13 @@ class Parser:
                or self.is_break() \
                 or self.is_return_stat()\
                 or self.is_show()\
-                or self.is_switch_statement()  # Add this line
+                 or self.is_switch_statement() \
+               or self.is_theorem_statement() \
+               or self.is_proof_block() \
+               or self.is_hypothesis() \
+               or self.is_test_statement()\
+                or self.is_axiom_statement()  # ← ADD THIS LINE
+
 
 
     def statement_list(self):
@@ -337,6 +343,16 @@ class Parser:
             return self.import_statement()
         elif self.is_switch_statement():
             return self.switch_statement()
+        elif self.is_theorem_statement():
+            return self.theorem_statement()
+        elif self.is_proof_block():
+            return self.proof_block()
+        elif self.is_hypothesis():
+            return self.hypothesis_statement()
+        elif self.is_test_statement():
+            return self.test_statement()
+        elif self.next_token_is(AXIOM):
+            return self.axiom_statement()
 
         #print(token)
         self.error("should be ID or LPARENT, got {}".format(token))
@@ -781,7 +797,193 @@ class Parser:
                 function_decl = FunctionDecl(proc_name, parameters_list, block)
                 declarations.append(function_decl)
 
-        return declarations    
+        return declarations
+    def is_theorem_statement(self):
+        """Check if next tokens form a theorem"""
+        return self.next_tokens_are(THEOREM)
+    
+    def is_proof_block(self):
+        """Check if next tokens form a proof"""
+        return self.next_tokens_are(PROOF)
+    
+    def is_hypothesis(self):
+        """Check if next tokens form a hypothesis"""
+        return self.next_tokens_are(HYPOTHESIS)
+    
+    def is_test_statement(self):
+        """Check if next tokens form a test"""
+        return self.next_tokens_are(TEST)
+    
+    def theorem_statement(self):
+        """
+        Grammar:
+        theorem_statement: THEOREM ID COLON logical_expression
+        """
+        self.match(THEOREM)
+        theorem_name = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(COLON)
+        statement = self.logical_expression()
+        self.match(SEMI)
+        
+        return TheoremStatement(theorem_name, statement)
+    
+    def proof_block(self):
+        """
+        Grammar:
+        proof_block: PROOF ID LCBRACE proof_steps QED RCBRACE
+        """
+        self.match(PROOF)
+        theorem_name = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(LCBRACE)
+        
+        steps = self.proof_steps()
+        
+        self.match(QED)
+        self.match(RCBRACE)
+        
+        return ProofBlock(theorem_name, steps)
+    
+    def proof_steps(self):
+        """Parse sequence of proof steps"""
+        steps = []
+        
+        while (self.lexer.get_current_token().type not in (QED, RCBRACE) and 
+               self.lexer.get_current_token().type != EOF):
+            steps.append(self.proof_step())
+        
+        return steps
+    
+    def proof_step(self):
+        """
+        Grammar:
+        proof_step: step_type logical_expression (BY justification)? SEMI
+        step_type: ASSUME | GIVEN | THEREFORE | HYPOTHESIS
+        """
+        step_type = self.lexer.get_current_token().type
+        
+        if step_type in (ASSUME, GIVEN, THEREFORE, HYPOTHESIS):
+            self.lexer.go_forward()  # consume step type
+            statement = self.logical_expression()
+            
+            justification = None
+            if self.next_token_is(BY):
+                self.match(BY)
+                justification = self.justification()
+            
+            self.match(SEMI)
+            return ProofStep(step_type, statement, justification)
+        
+        else:
+            self.error(f"Expected proof step keyword, got {step_type}")
+    
+    def logical_expression(self):
+        """
+        Grammar:
+        logical_expression: quantified_expr | implication_expr | base_expr
+        """
+        if self.next_token_is(FORALL) or self.next_token_is(EXISTS):
+            return self.quantified_expression()
+        elif self.match_next_tokens_to_any(IMPLIES, IFF):
+            return self.implication_expression()
+        else:
+            return self.base_expr()
+    
+    def quantified_expression(self):
+        """
+        Grammar:
+        quantified_expr: (FORALL | EXISTS) ID COMMA logical_expression
+        """
+        quantifier = self.lexer.get_current_token().type
+        self.lexer.go_forward()  # consume FORALL/EXISTS
+        
+        variable = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(COMMA)
+        
+        expression = self.logical_expression()
+        
+        return LogicalExpression(quantifier, expression, None, quantifier, variable)
+    
+    def implication_expression(self):
+        """
+        Grammar:
+        implication_expr: logical_expression (IMPLIES | IFF) logical_expression
+        """
+        left = self.base_expr()
+        
+        if self.lexer.get_current_token().type in (IMPLIES, IFF):
+            operator = self.lexer.get_current_token().type
+            self.lexer.go_forward()
+            right = self.logical_expression()
+            
+            return LogicalExpression(operator, left, right)
+        
+        return left
+    
+    def justification(self):
+        """Parse justification for a proof step"""
+        # This could be a reference to an axiom, previous step, or logical rule
+        return self.base_expr()
+    
+    def hypothesis_statement(self):
+        """
+        Grammar:
+        hypothesis_statement: HYPOTHESIS ID COLON logical_expression SEMI
+        """
+        self.match(HYPOTHESIS)
+        name = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(COLON)
+        statement = self.logical_expression()
+        self.match(SEMI)
+        
+        return Hypothesis(name, statement)
+    
+    def test_statement(self):
+        """
+        Grammar:
+        test_statement: TEST ID LCBRACE test_cases RCBRACE
+        """
+        self.match(TEST)
+        target = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(LCBRACE)
+        
+        test_cases = self.test_cases()
+        
+        self.match(RCBRACE)
+        
+        return TestStatement(target, test_cases)
+    
+    def test_cases(self):
+        """Parse test cases for theorem verification"""
+        cases = []
+        
+        while (self.lexer.get_current_token().type not in (RCBRACE,) and 
+               self.lexer.get_current_token().type != EOF):
+            cases.append(self.base_expr())
+            if self.next_token_is(SEMI):
+                self.match(SEMI)
+        
+        return cases
+    def is_axiom_statement(self):
+        """Check if next tokens form an axiom"""
+        return self.next_tokens_are(AXIOM)
+    def axiom_statement(self):
+        """
+        Grammar:
+        axiom_statement: AXIOM ID COLON logical_expression SEMI
+        """
+        self.match(AXIOM)
+        name = self.lexer.get_current_token().value
+        self.match(ID)
+        self.match(COLON)
+        statement = self.logical_expression()
+        self.match(SEMI)
+        
+        return AxiomStatement(name, statement)    
     
 
     

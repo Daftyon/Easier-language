@@ -6,7 +6,7 @@ var companyStrong: boolean = true;
 if (marketStable and companyStrong) {
     SHOW("Proceed with caution");  
 }
- var grade: string = "B";
+ var grade: string = "B"; 
 
     
     switch (grade) {

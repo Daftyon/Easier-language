@@ -1,7 +1,7 @@
 
 ALGORITHM example {
     SHOW("hello from el "); 
-
+    axiom basic_truth: true; 
     var marketStable: boolean = realistic;
     var companyStrong: boolean = true;
 

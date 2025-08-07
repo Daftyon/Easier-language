@@ -253,11 +253,6 @@ class Lexer(object):
             self.advance()
             self.current_token = Token(self.get_char_type(cur_char), cur_char)
             return self.current_token
-        elif cur_char == '.':
-            # DOT
-            self.advance()
-            self.current_token = Token(DOT, DOT)
-            return self.current_token
         elif cur_char == ';':
             # SEMI
             self.advance()
@@ -405,11 +400,11 @@ class Lexer(object):
             self.advance(6)
             self.current_token = Token(VERIFY, VERIFY)
             return self.current_token
-            
+        elif cur_char.isspace():
+            while self.get_current_character() is not None and self.get_current_character().isspace():
+                self.advance()
+            return self.get_next_token()    
         else:
-            if cur_char.isspace():
-                while self.get_current_character() is not None and self.get_current_character().isspace():
-                    self.advance()
-                return self.get_next_token()
+            
             self.error('syntax error "' + cur_char + '" is not valid character')
-        self.error('unrecognized character ' + cur_char)
+        # self.error('unrecognized character ' + cur_char)

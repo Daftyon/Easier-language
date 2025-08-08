@@ -16,6 +16,9 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.theorems = {}  # Store theorems during interpretation
         self.proofs = {}    # Store proofs during interpretation
         self.hypotheses = {}  # Store active hypotheses
+        self.tests = {}  # Store tests
+        self.axioms = {}  # Store axioms
+        self.definitions = {}  # Store definitions
 
         super().__init__(SymbolTable())
 
@@ -596,6 +599,145 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             ProofConsole.proof_incomplete(theorem_name)
         
         return node
-
+    def visit_TestStatement(self, node: TestStatement):
+        """Execute test statement - test hypothesis against condition"""
+        test_name = node.get_test_name()
+        hypothesis_name = node.get_hypothesis_name()
+        
+        # Get the hypothesis being tested
+        if hypothesis_name not in self.hypotheses:
+            self.error(f"Cannot test unknown hypothesis: {hypothesis_name}")
+        
+        hypothesis = self.hypotheses[hypothesis_name]
+        test_condition = node.get_test_condition()
+        
+        # Evaluate both hypothesis and test condition
+        hypothesis_value = self.visit(hypothesis.get_statement())
+        test_condition_value = self.visit(test_condition)
+        
+        # Determine test result
+        test_result = self.evaluate_test(hypothesis_value, test_condition_value)
+        node.set_test_result(test_result)
+        
+        # Store test
+        self.tests[test_name] = node
+        
+        # Print colored test result
+        from utils.colors import Colors
+        result_color = Colors.SUCCESS if test_result == "PASS" else \
+                      Colors.ERROR if test_result == "FAIL" else Colors.WARNING
+        
+        print(f"{Colors.BRIGHT_YELLOW}{Colors.BOLD}[TEST]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET}: "
+              f"{result_color}{test_result}{Colors.RESET}")
+        print(f"   Hypothesis '{hypothesis_name}': {hypothesis_value}")
+        print(f"   Test condition: {test_condition_value}")
+        
+        return node
     
+    def evaluate_test(self, hypothesis_value, test_condition_value):
+        """Evaluate test result based on hypothesis and test condition values"""
+        from utils.constants import TRUE, FALSE, REALISTIC
+        
+        # Simple test logic: does hypothesis match test condition?
+        if hypothesis_value == test_condition_value:
+            return "PASS"
+        elif (hypothesis_value == REALISTIC or test_condition_value == REALISTIC):
+            return "UNCERTAIN"  # Realistic values create uncertainty
+        else:
+            return "FAIL"
+    
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Enhanced proof execution with test support"""
+        theorem_name = node.get_theorem_name()
+        
+        if theorem_name not in self.theorems:
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        self.proofs[theorem_name] = node
+        
+        from utils.colors import ProofConsole, Colors
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps with hypothesis and test support
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            if step.is_hypothesis_step():
+                # Display hypothesis step
+                print(f"   {Colors.BRIGHT_CYAN}{i}. [HYPOTHESIS]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_hypothesis_name()}{Colors.RESET}: "
+                      f"{Colors.CYAN}{step.get_statement()}{Colors.RESET}")
+                      
+            elif step.is_test_step():
+                # Display test step
+                print(f"   {Colors.BRIGHT_YELLOW}{i}. [TEST]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_test_name()}{Colors.RESET}: "
+                      f"{Colors.YELLOW}{step.get_statement()}{Colors.RESET}")
+            else:
+                # Regular proof step
+                ProofConsole.proof_step(i, step.get_statement())
+        
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
+    def visit_AxiomDeclaration(self, node: AxiomDeclaration):
+            """Execute axiom declaration - register fundamental truth"""
+            axiom_name = node.get_name()
+            
+            # Register axiom
+            self.axioms[axiom_name] = node
+            
+            # Print colored axiom
+            from utils.colors import Colors
+            print(f"{Colors.BRIGHT_MAGENTA}{Colors.BOLD}[AXIOM]{Colors.RESET} "
+                f"{Colors.BRIGHT_WHITE}{axiom_name}{Colors.RESET}")
+            print(f"   Statement: {Colors.MAGENTA}{node.get_statement()}{Colors.RESET}")
+            print(f"   Status: {Colors.SUCCESS}{Colors.BOLD}SELF-EVIDENT{Colors.RESET} "
+                f"{Colors.MAGENTA}(requires no proof){Colors.RESET}")
+            
+            return node
+     
+    def visit_DefinitionDeclaration(self, node: DefinitionDeclaration):
+        """Execute definition declaration - register definition"""
+        definition_name = node.get_name()
+        
+        # Register definition
+        self.definitions[definition_name] = node
+        
+        # Print colored definition
+        from utils.colors import Colors
+        params_str = f"({', '.join(node.get_parameters())})" if node.has_parameters() else ""
+        
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}[DEFINITION]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{definition_name}{params_str}{Colors.RESET}")
+        print(f"   Body: {Colors.CYAN}{node.get_body()}{Colors.RESET}")
+        
+        if node.has_parameters():
+            print(f"   Parameters: {Colors.YELLOW}{', '.join(node.get_parameters())}{Colors.RESET}")
+        
+        print(f"   Status: {Colors.SUCCESS}DEFINED{Colors.RESET}")
+        
+        return node
+    
+    def lookup_definition(self, name):
+        """Look up a definition by name"""
+        return self.definitions.get(name, None)
+    
+    def apply_definition(self, definition_name, arguments=None):
+        """Apply a definition with given arguments"""
+        definition = self.lookup_definition(definition_name)
+        if not definition:
+            return None
+        
+        # For now, just return the definition body
+        # In a more advanced system, we'd substitute parameters with arguments
+        definition.increment_usage()
+        return definition.get_body()
     

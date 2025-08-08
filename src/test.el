@@ -1,13 +1,15 @@
-ALGORITHM testproofs {
-    
+ALGORITHM testfix {
+    theorem simple: true;
+        definition even: true;                    // x is even if x mod 2 = 0 (simplified)
 
-    theorem modusponens: true;  // Simplified for now
-    
-    proof modusponens {
-        hypothesis p: true;           // Assume P is true
-        hypothesis pimpliesq: true or false;  // Assume P implies Q
-        true;                        // Therefore Q (simplified)
+        axiom identity: true === true;
+ axiom excludedmiddle: true or ! true;
+    proof simple {
+        hypothesis h1: false;
+        test t1: h1: realistic;
+        realistic;
         QED;
     }
-    SHOW("Proofs working!");
+    
+    SHOW("Fixed!");
 }

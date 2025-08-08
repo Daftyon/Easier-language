@@ -1,43 +1,17 @@
-ALGORITHM example {SHOW("hello from el "); 
-
-var marketStable: boolean = realistic;
-var companyStrong: boolean = true;
-
-if (marketStable and companyStrong) {
-    SHOW("Proceed with caution");  
-}
- var grade: string = "B";
-
+ALGORITHM testproofs {
+    theorem simple: true;
     
-    switch (grade) {
-        case "A":
-        case "B":
-            SHOW("Excellent or Good");
-            break;
-        case "C":
-            SHOW("Average");
-            break;
-        default:
-            show("Needs improvement");
-            break;
+    proof simple {
+        true;
+        QED;
     }
-//    const GREETING: string = "Hello, World!";
     
-//     show(GREETING);
+    theorem threevalued: realistic or realistic;
     
-    // This will cause a semantic error:
-    // GREETING = "Goodbye!"; // Error: Cannot assign to constant
+    proof threevalued {
+        realistic or true;  
+        QED;
+    }
     
-    // Constants must be initialized:
-    // const UNINITIALIZED: integer; // Error: Constants must be initialized
-    //   var weather_good: boolean = realistic;        // 50% probability
-    // var traffic_light: boolean = true;
-    // var will_rain: boolean = realistic;
-    
-    // // Using realistic in conditions
-    // if (weather_good and !will_rain) {
-    //     show("Good day for outdoor activity");
-    // } else {
-    //     show("Maybe stay inside");
-    // }
+    SHOW("Proofs working!");
 }

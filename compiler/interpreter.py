@@ -4,6 +4,7 @@ from system.builtin_functions.main import *
 from utils.constants import *
 from utils.data_classes import *
 from utils.errors import InterpreterError, ErrorCode
+from utils.colors import ProofConsole, Colors
 
 
 class Interpreter(BeforeNodeVisitor, NestedScopeable):
@@ -12,6 +13,9 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.terminated_call_stack = list()
         self.function_return_stat_list = list()
         self.tree = tree
+        self.theorems = {}  # Store theorems during interpretation
+        self.proofs = {}    # Store proofs during interpretation
+
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -476,5 +480,69 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             return self.symbol_table.assign(var_name, Symbol(var_name, value, base_type))
         else:
             raise ValueError(f"Variable {var_name} is not defined")
+    def visit_TheoremDeclaration(self, node: TheoremDeclaration):
+        """Execute theorem declaration - register theorem in system"""
+        theorem_name = node.get_name()
+        
+        # Register theorem in interpreter's theorem database
+        self.theorems[theorem_name] = node
+        
+        # Use colored console output
+        ProofConsole.theorem_declared(
+            theorem_name, 
+            node.get_statement(), 
+            node.is_theorem_proven()
+        )
+        
+        return node
+        
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Execute proof declaration - register and validate proof"""
+        theorem_name = node.get_theorem_name()
+        
+        # Check if theorem exists
+        if theorem_name not in self.theorems:
+            ProofConsole.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        # Register proof
+        self.proofs[theorem_name] = node
+        
+        # Use colored console output for proof start
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps (for now, just display them)
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            ProofConsole.proof_step(i, step.get_statement())
+        
+        # Check if proof is complete
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            # Link proof to theorem
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            
+            # For now, assume complete proofs are valid
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
+    
+    def visit_ProofStep(self, node: ProofStep):
+        """Execute individual proof step"""
+        # For now, just evaluate the statement
+        if node.get_statement() is not None:
+            result = self.visit(node.get_statement())
+            return result
+        return None
+    
+    def visit_QEDStatement(self, node: QEDStatement):
+        """Execute QED statement"""
+        # QED marks end of proof
+        return "QED"
+
     
     

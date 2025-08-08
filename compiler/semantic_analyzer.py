@@ -4,11 +4,15 @@ from utils.data_classes import *
 from utils.errors import SemanticError, ErrorCode
 from compiler.symbol_table import SymbolTable
 
+from utils.colors import ProofConsole, Colors
 
 class SemanticAnalyzer(NodeVisitor):
     def __init__(self, tree):
         self.tree = tree
         self.symbol_table = SymbolTable()
+        self.theorems = {}  # Dictionary to store theorems by name
+        self.proofs = {}
+
 
     def error(self, error_code, message):
         raise SemanticError(
@@ -293,6 +297,81 @@ class SemanticAnalyzer(NodeVisitor):
             return None
         else:
             self.error(error_code=ErrorCode.ID_NOT_FOUND, message=f"Variable {var_name} is not defined")
-
+    def visit_TheoremDeclaration(self, node: TheoremDeclaration):
+        """Semantic analysis for theorem declarations"""
+        theorem_name = node.get_name()
+        
+        # Check if theorem name is already defined
+        if theorem_name in self.theorems:
+            ProofConsole.error(f"Theorem '{theorem_name}' is already declared")
+            self.error(ErrorCode.DUPLICATE_ID, f"Theorem '{theorem_name}' is already declared")
+        
+        # Check if theorem name conflicts with variables/functions
+        if self.symbol_table.is_defined(theorem_name):
+            ProofConsole.error(f"Theorem name '{theorem_name}' conflicts with existing identifier")
+            self.error(ErrorCode.DUPLICATE_ID, 
+                     f"Theorem name '{theorem_name}' conflicts with existing identifier")
+        
+        # Analyze the theorem statement
+        if node.get_statement() is not None:
+            self.visit(node.get_statement())
+        
+        # Register the theorem
+        self.theorems[theorem_name] = node
+        
+        # Print colored declaration
+        print(f"{Colors.BRIGHT_BLUE}{Colors.BOLD}Declared theorem:{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{theorem_name}{Colors.RESET} "
+              f"{Colors.YELLOW}(unproven){Colors.RESET}")
+        
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Semantic analysis for proof declarations"""
+        theorem_name = node.get_theorem_name()
+        
+        # Check if the theorem being proved exists
+        if theorem_name not in self.theorems:
+            ProofConsole.error(f"Cannot prove theorem '{theorem_name}' - theorem not declared")
+            self.error(ErrorCode.ID_NOT_FOUND, 
+                     f"Cannot prove theorem '{theorem_name}' - theorem not declared")
+        
+        # Check if this theorem already has a proof
+        if theorem_name in self.proofs:
+            ProofConsole.error(f"Theorem '{theorem_name}' already has a proof")
+            self.error(ErrorCode.DUPLICATE_ID, 
+                     f"Theorem '{theorem_name}' already has a proof")
+        
+        # Analyze each proof step
+        for step in node.get_proof_steps():
+            self.visit(step)
+        
+        # Register the proof
+        self.proofs[theorem_name] = node
+        
+        # Link proof to theorem
+        theorem = self.theorems[theorem_name]
+        theorem.set_proof(node)
+        
+        # Basic proof validation (for now, just check if it's complete)
+        if node.is_proof_complete():
+            print(f"{Colors.SUCCESS}{Colors.BOLD}[✓] Complete proof for theorem:{Colors.RESET} "
+                  f"{Colors.BRIGHT_WHITE}{theorem_name}{Colors.RESET}")
+            # For now, mark as valid if complete (later add real proof checking)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            print(f"{Colors.WARNING}{Colors.BOLD}[!] Incomplete proof for theorem:{Colors.RESET} "
+                  f"{Colors.BRIGHT_WHITE}{theorem_name}{Colors.RESET}")
     
+    def visit_ProofStep(self, node: ProofStep):
+        """Semantic analysis for individual proof steps"""
+        # Analyze the statement in the proof step
+        if node.get_statement() is not None:
+            self.visit(node.get_statement())
+    
+    def visit_QEDStatement(self, node: QEDStatement):
+        """Semantic analysis for QED statements"""
+        # QED statements are always valid
+        pass
+
+        
    

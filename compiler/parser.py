@@ -739,17 +739,111 @@ class Parser:
         val = self.base_expr()
 
         return ConstDeclaration(variables, base_type, val)
+    def is_theorem_declaration(self):
+        """Check if next tokens form a theorem declaration"""
+        return self.next_tokens_are(THEOREM)
     
+    def theorem_declaration(self):
+        """
+        Grammar for basic theorem (step 1 - just declaration):
+        theorem_declaration: THEOREM ID COLON base_expr SEMI
+        
+        Example:
+        theorem pythagorean: a^2 + b^2 = c^2;
+        theorem modus_ponens: (P -> Q) and P -> Q;
+        """
+        self.match(THEOREM)
+        
+        # Get theorem name
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected theorem name (identifier) after THEOREM')
+        
+        theorem_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(COLON)
+        
+        # For now, we'll parse the statement as a base expression
+        # Later we can make this more sophisticated for mathematical expressions
+        statement = self.base_expr()
+        
+        self.match(SEMI)
+        
+        return TheoremDeclaration(theorem_name, statement)
+
+    def is_proof_declaration(self):
+        """Check if next tokens form a proof declaration"""
+        return self.next_tokens_are(PROOF)
+    
+    def is_qed_statement(self):
+        """Check if next tokens form QED statement"""
+        return self.next_tokens_are(QED)
+    
+    def proof_declaration(self):
+        """
+        Grammar for proof:
+        proof_declaration: PROOF ID LCBRACE proof_body RCBRACE
+        proof_body: proof_step* qed_statement
+        proof_step: statement SEMI
+        qed_statement: QED SEMI
+        
+        Example:
+        proof identity_law {
+            true or false;
+            QED;
+        }
+        """
+        self.match(PROOF)
+        
+        # Get theorem name that this proof is for
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected theorem name after PROOF')
+        
+        theorem_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(LCBRACE)
+        
+        # Parse proof body (steps + QED)
+        proof_steps = []
+        
+        # Parse proof steps until QED
+        while not self.is_qed_statement() and self.lexer.get_current_token().type != RCBRACE:
+            if self.lexer.get_current_token().type == EOF:
+                self.error("Unexpected end of file in proof block")
+            
+            # For now, parse each step as a base expression
+            step_statement = self.base_expr()
+            self.match(SEMI)
+            
+            # Create a basic proof step
+            proof_step = ProofStep("statement", step_statement, "direct")
+            proof_steps.append(proof_step)
+        
+        # Parse QED statement
+        qed_found = False
+        if self.is_qed_statement():
+            self.match(QED)
+            self.match(SEMI)
+            qed_found = True
+        
+        self.match(RCBRACE)
+        
+        # Create proof declaration
+        proof = ProofDeclaration(theorem_name, proof_steps)
+        if qed_found:
+            proof.mark_complete()
+        
+        return proof
     def is_declaration(self):
         """Updated to include const declarations"""
         token = self.lexer.get_current_token()
-        return token.type in (VAR, FUNCTION, CONST)
-    
+        return token.type in (VAR, FUNCTION, CONST, THEOREM,PROOF)    
     def declarations(self) -> list:
         """Updated declarations method to handle constants"""
         declarations = []
         
-        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST):
+        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST,THEOREM,PROOF):
             # Handle variable declarations
             if self.lexer.get_current_token().type is VAR:
                 self.match(VAR)
@@ -761,7 +855,10 @@ class Parser:
             elif self.lexer.get_current_token().type is CONST:
                 declarations.append(self.const_declaration())
                 self.match(SEMI)
-            
+            elif self.lexer.get_current_token().type is THEOREM:
+                declarations.append(self.theorem_declaration())
+            elif self.lexer.get_current_token().type is PROOF:
+                declarations.append(self.proof_declaration())
             # Handle function declarations
             while self.lexer.get_current_token().type is FUNCTION:
                 self.match(FUNCTION)

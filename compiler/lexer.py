@@ -345,6 +345,19 @@ class Lexer(object):
             self.advance(5)
             self.current_token = Token(CONST, CONST)
             return self.current_token
+        elif self.next_characters_are("theorem"):
+            self.advance(7)
+            self.current_token = Token(THEOREM, THEOREM)
+            return self.current_token
+        elif self.next_characters_are("proof"):
+            self.advance(5)
+            self.current_token = Token(PROOF, PROOF)
+            return self.current_token
+        elif self.next_characters_are("qed"):
+            self.advance(3)
+            self.current_token = Token(QED, QED)
+            return self.current_token
+    
             
         else:
             if cur_char.isspace():

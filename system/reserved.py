@@ -33,5 +33,8 @@ RESERVED_KEYWORDS = {
     DEFAULT: Token(DEFAULT, DEFAULT),
     CONST: Token(CONST, CONST),
     REALISTIC: Token(BOOLEAN, REALISTIC),  # Treat as boolean type but with realistic value
+    THEOREM: Token(THEOREM, THEOREM),  # New theorem keyword
+    PROOF: Token(PROOF, PROOF),
+    QED: Token(QED, QED),
 
 }

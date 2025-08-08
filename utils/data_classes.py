@@ -517,8 +517,104 @@ class BooleanSymbol:
     
     def __str__(self):
         return f'BooleanSymbol({self.value}, probability={self.probability})'
+class ProofDeclaration(AST):
+    """Represents a proof for a theorem"""
+    def __init__(self, theorem_name: str, proof_steps=None):
+        self.theorem_name = theorem_name      # Which theorem this proves
+        self.proof_steps = proof_steps or []  # List of proof steps
+        self.is_complete = False              # Whether proof is complete (ends with QED)
+        self.is_valid = False                 # Whether proof is logically valid
+        
+    def get_theorem_name(self):
+        return self.theorem_name
+    
+    def get_proof_steps(self):
+        return self.proof_steps
+    
+    def add_step(self, step):
+        self.proof_steps.append(step)
+    
+    def mark_complete(self):
+        self.is_complete = True
+    
+    def mark_valid(self):
+        self.is_valid = True
+        self.is_complete = True
+    
+    def is_proof_complete(self):
+        return self.is_complete
+    
+    def is_proof_valid(self):
+        return self.is_valid
+    
+    def __str__(self):
+        status = "VALID" if self.is_valid else ("COMPLETE" if self.is_complete else "INCOMPLETE")
+        return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
 
+class ProofStep(AST):
+    """Represents a single step in a proof"""
+    def __init__(self, step_type: str, statement=None, justification=None):
+        self.step_type = step_type          # Type of proof step (assume, show, etc.)
+        self.statement = statement          # The statement being made
+        self.justification = justification  # How this step is justified
+        
+    def get_step_type(self):
+        return self.step_type
+    
+    def get_statement(self):
+        return self.statement
+    
+    def get_justification(self):
+        return self.justification
+    
+    def __str__(self):
+        return f'ProofStep({self.step_type}, {self.statement}, {self.justification})'
 
+class QEDStatement(AST):
+    """Represents the end of proof marker"""
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+        return 'QED()'
 
-
+class TheoremDeclaration(AST):
+    """Enhanced theorem declaration that can be linked to proofs"""
+    def __init__(self, theorem_name: str, statement=None):
+        self.theorem_name = theorem_name
+        self.statement = statement
+        self.is_proven = False
+        self.dependencies = []
+        self.proof = None  # Link to associated proof
+        
+    def get_name(self):
+        return self.theorem_name
+    
+    def get_statement(self):
+        return self.statement
+    
+    def set_proof(self, proof: ProofDeclaration):
+        self.proof = proof
+        if proof.is_proof_valid():
+            self.mark_proven()
+    
+    def get_proof(self):
+        return self.proof
+    
+    def mark_proven(self):
+        self.is_proven = True
+    
+    def is_theorem_proven(self):
+        return self.is_proven
+    
+    def add_dependency(self, theorem_name):
+        self.dependencies.append(theorem_name)
+    
+    def get_dependencies(self):
+        return self.dependencies
+    
+    def __str__(self):
+        status = "PROVEN" if self.is_proven else "UNPROVEN"
+        proof_info = f" (with proof)" if self.proof else ""
+        return f'Theorem({self.theorem_name}, {self.statement}, {status}{proof_info})'
 

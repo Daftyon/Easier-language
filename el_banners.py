@@ -4,7 +4,7 @@ El Programming Language - Generated ASCII Banners
 Auto-generated from el_icone.ico
 """
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 __author__ = "El Language Team"
 
 BANNER_LARGE_SIMPLE = """
@@ -29,7 +29,7 @@ BANNER_LARGE_SIMPLE = """
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@%%@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     A modern and easy programming language
 """
 
@@ -56,7 +56,7 @@ BANNER_LARGE_BORDERED = """
 = @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@%%@@@@@@ =
 = @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ =
 ================================================================
-  El Programming Language v1.0.5
+  El Programming Language v1.0.6
   A modern and easy programming language
 """
 
@@ -81,7 +81,7 @@ BANNER_LARGE_COMPACT = """
 @@@@@@%*+=+*%@@%#%@@@@@@@@@@@@%#%@@@@@@@@@@@@@@@@@@@%%@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@%%@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     Created by El Language Team
     https://github.com/Daftyon/Easier-language
 """
@@ -103,7 +103,7 @@ BANNER_MEDIUM_SIMPLE = """
 @@@@@%#%@@@@@@@@@@@@%%@@@@@@@@@@@@@%@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     A modern and easy programming language
 """
 
@@ -125,7 +125,7 @@ BANNER_MEDIUM_BORDERED = """
 = @@@@@%#%@@@@@@@@@@@@%%@@@@@@@@@@@@@%@@@@ =
 = @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ =
 ============================================
-  El Programming Language v1.0.5
+  El Programming Language v1.0.6
   A modern and easy programming language
 """
 
@@ -145,7 +145,7 @@ BANNER_MEDIUM_COMPACT = """
 @@@@*=-+#@@@@@%#**+++++**#%@@@%%%%%@@@@@
 @@@@@%#%@@@@@@@@@@@@%%@@@@@@@@@@@@@%@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     Created by El Language Team
     https://github.com/Daftyon/Easier-language
 """
@@ -162,7 +162,7 @@ BANNER_SMALL_SIMPLE = """
 @@@#=+@@@@%%###**##%@@@@%%%@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     A modern and easy programming language
 """
 
@@ -179,7 +179,7 @@ BANNER_SMALL_BORDERED = """
 = @@@#=+@@@@%%###**##%@@@@%%%@@@ =
 = @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ =
 ==================================
-  El Programming Language v1.0.5
+  El Programming Language v1.0.6
   A modern and easy programming language
 """
 
@@ -194,7 +194,7 @@ BANNER_SMALL_COMPACT = """
 @@@@@@@%*=+==-:-=-====+%%*%@@@
 @@@#=+@@@@%%###**##%@@@@%%%@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     Created by El Language Team
     https://github.com/Daftyon/Easier-language
 """
@@ -209,7 +209,7 @@ BANNER_TINY_SIMPLE = """
 @@#*@%#*+=++*#%%%%@@
 @@@%@@@@@@@@@@@@@@@@
 
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     A modern and easy programming language
 """
 
@@ -224,7 +224,7 @@ BANNER_TINY_BORDERED = """
 = @@#*@%#*+=++*#%%%%@@ =
 = @@@%@@@@@@@@@@@@@@@@ =
 ========================
-  El Programming Language v1.0.5
+  El Programming Language v1.0.6
   A modern and easy programming language
 """
 
@@ -237,7 +237,7 @@ BANNER_TINY_COMPACT = """
 @@@@*--==-=----+#%@@
 @@#*@%#*+=++*#%%%%@@
 @@@%@@@@@@@@@@@@@@@@
-    El Programming Language v1.0.5
+    El Programming Language v1.0.6
     Created by El Language Team
     https://github.com/Daftyon/Easier-language
 """

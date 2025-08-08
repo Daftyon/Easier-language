@@ -569,15 +569,17 @@ class ProofDeclaration(AST):
     def __str__(self):
         status = "VALID" if self.is_valid else ("COMPLETE" if self.is_complete else "INCOMPLETE")
         return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
+    
 class ProofStep(AST):
-    """Enhanced proof step that can handle different types including tests"""
+    """Enhanced proof step that can reference axioms"""
     def __init__(self, step_type: str, statement=None, justification=None, 
-                 hypothesis_name=None, test_name=None):
-        self.step_type = step_type              # "statement", "hypothesis", "test", etc.
+                 hypothesis_name=None, test_name=None, axiom_name=None):
+        self.step_type = step_type              # "statement", "hypothesis", "test", "axiom", etc.
         self.statement = statement              # The statement being made
         self.justification = justification      # How this step is justified
         self.hypothesis_name = hypothesis_name  # Name if this is a hypothesis
         self.test_name = test_name             # Name if this is a test
+        self.axiom_name = axiom_name           # Name if this references an axiom
         
     def get_step_type(self):
         return self.step_type
@@ -591,21 +593,30 @@ class ProofStep(AST):
     def get_hypothesis_name(self):
         return self.hypothesis_name
     
-    def get_test_name(self):  # ✅ This method was missing
+    def get_test_name(self):
         return self.test_name
+    
+    def get_axiom_name(self):
+        return self.axiom_name
     
     def is_hypothesis_step(self):
         return self.step_type == "hypothesis"
     
-    def is_test_step(self):  # ✅ This method was also missing
+    def is_test_step(self):
         return self.step_type == "test"
+    
+    def is_axiom_step(self):
+        return self.step_type == "axiom"
     
     def __str__(self):
         if self.hypothesis_name:
             return f'ProofStep({self.step_type}, {self.hypothesis_name}: {self.statement})'
         elif self.test_name:
             return f'ProofStep({self.step_type}, test_{self.test_name}: {self.statement})'
+        elif self.axiom_name:
+            return f'ProofStep({self.step_type}, axiom_{self.axiom_name}: {self.statement})'
         return f'ProofStep({self.step_type}, {self.statement})'
+
 class QEDStatement(AST):
     """Represents the end of proof marker"""
     def __init__(self):
@@ -692,3 +703,31 @@ class TestStatement(AST):
     def __str__(self):
         status = f"({self.test_result})" if self.is_executed else "(not executed)"
         return f'Test({self.test_name}, {self.hypothesis_name}, {status})'
+
+class AxiomDeclaration(AST):
+    """Represents an axiom - a fundamental truth that doesn't need proof"""
+    def __init__(self, axiom_name: str, statement=None, description=None):
+        self.axiom_name = axiom_name        # Name of the axiom
+        self.statement = statement          # The axiom statement (always true)
+        self.description = description      # Optional description
+        self.is_axiom = True               # Mark as axiom (self-evident)
+        self.is_proven = True              # Axioms are considered proven by definition
+        
+    def get_name(self):
+        return self.axiom_name
+    
+    def get_statement(self):
+        return self.statement
+    
+    def get_description(self):
+        return self.description
+    
+    def is_axiom_declaration(self):
+        return self.is_axiom
+    
+    def is_axiom_proven(self):
+        return self.is_proven  # Axioms are always "proven"
+    
+    def __str__(self):
+        desc = f", '{self.description}'" if self.description else ""
+        return f'Axiom({self.axiom_name}, {self.statement}{desc})'

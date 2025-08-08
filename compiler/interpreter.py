@@ -17,8 +17,7 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.proofs = {}    # Store proofs during interpretation
         self.hypotheses = {}  # Store active hypotheses
         self.tests = {}  # Store tests
-
-
+        self.axioms = {}  # Store axioms
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -686,6 +685,21 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             ProofConsole.proof_incomplete(theorem_name)
         
         return node
-
-    
+    def visit_AxiomDeclaration(self, node: AxiomDeclaration):
+            """Execute axiom declaration - register fundamental truth"""
+            axiom_name = node.get_name()
+            
+            # Register axiom
+            self.axioms[axiom_name] = node
+            
+            # Print colored axiom
+            from utils.colors import Colors
+            print(f"{Colors.BRIGHT_MAGENTA}{Colors.BOLD}[AXIOM]{Colors.RESET} "
+                f"{Colors.BRIGHT_WHITE}{axiom_name}{Colors.RESET}")
+            print(f"   Statement: {Colors.MAGENTA}{node.get_statement()}{Colors.RESET}")
+            print(f"   Status: {Colors.SUCCESS}{Colors.BOLD}SELF-EVIDENT{Colors.RESET} "
+                f"{Colors.MAGENTA}(requires no proof){Colors.RESET}")
+            
+            return node
+        
     

@@ -14,6 +14,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.proofs = {}
         self.hypotheses = {}  # Track hypotheses
         self.tests = {}  # Track tests
+        self.axioms = {}  # Track axioms
 
 
 
@@ -417,5 +418,29 @@ class SemanticAnalyzer(NodeVisitor):
         print(f"{Colors.BRIGHT_YELLOW}[TEST]{Colors.RESET} "
               f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET} "
               f"for hypothesis {Colors.CYAN}{hypothesis_name}{Colors.RESET}")
+    def visit_AxiomDeclaration(self, node: AxiomDeclaration):
+        """Semantic analysis for axiom declarations"""
+        axiom_name = node.get_name()
         
+        # Check if axiom name conflicts
+        if axiom_name in self.axioms:
+            self.error(ErrorCode.DUPLICATE_ID, f"Axiom '{axiom_name}' is already defined")
+        
+        # Check if axiom name conflicts with other identifiers
+        if (axiom_name in self.theorems or 
+            self.symbol_table.is_defined(axiom_name)):
+            self.error(ErrorCode.DUPLICATE_ID, 
+                     f"Axiom name '{axiom_name}' conflicts with existing identifier")
+        
+        # Analyze the axiom statement
+        if node.get_statement() is not None:
+            self.visit(node.get_statement())
+        
+        # Register axiom
+        self.axioms[axiom_name] = node
+        
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_MAGENTA}[AXIOM]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{axiom_name}{Colors.RESET} "
+              f"{Colors.MAGENTA}(self-evident truth){Colors.RESET}")    
    

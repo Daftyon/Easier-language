@@ -365,7 +365,11 @@ class Lexer(object):
             self.advance(4)  # "test" is 4 characters
             self.current_token = Token(TEST, TEST)
             return self.current_token
-    
+        elif self.next_characters_are("axiom"):
+            self.advance(5)  # "axiom" is 5 characters
+            self.current_token = Token(AXIOM, AXIOM)
+            return self.current_token
+        
             
         else:
             if cur_char.isspace():

@@ -65,10 +65,41 @@ class Parser:
     def is_assignment(self):
         flag = self.next_tokens_are(ID, ASSIGN)
         return flag
+    def is_axiom_declaration(self):
+        """Check if next tokens form an axiom declaration"""
+        return self.next_tokens_are(AXIOM)
+    
+    def axiom_declaration(self):
+        """
+        Grammar for axiom:
+        axiom_declaration: AXIOM ID COLON base_expr SEMI
+        
+        Example:
+        axiom identity: true === true;
+        axiom excluded_middle: true or not true;
+        axiom realistic_uncertainty: realistic;
+        """
+        self.match(AXIOM)
+        
+        # Get axiom name
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected axiom name (identifier) after AXIOM')
+        
+        axiom_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(COLON)
+        
+        # Parse the axiom statement
+        statement = self.base_expr()
+        
+        self.match(SEMI)
+        
+        return AxiomDeclaration(axiom_name, statement)
 
     def is_declaration(self):
         token = self.lexer.get_current_token()
-        return token.type in (VAR, FUNCTION)
+        return token.type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM)
 
     def next_token_is(self, token_type):
         return self.next_tokens_are(token_type)
@@ -858,8 +889,9 @@ class Parser:
         """Check if next tokens form QED statement"""
         return self.next_tokens_are(QED)
     
+
     def proof_declaration(self):
-        """Enhanced proof declaration to handle test statements"""
+        """Enhanced proof declaration to handle axiom references"""
         self.match(PROOF)
         
         theorem_name = self.lexer.get_current_token().value
@@ -869,27 +901,25 @@ class Parser:
         
         proof_steps = []
         
-        # Parse proof steps including hypothesis and test statements
+        # Parse proof steps including axiom references
         while not self.is_qed_statement() and self.lexer.get_current_token().type != RCBRACE:
             if self.lexer.get_current_token().type == EOF:
                 self.error("Unexpected end of file in proof block")
             
             if self.is_hypothesis_statement():
-                # Parse hypothesis within proof
                 hypothesis = self.hypothesis_statement()
                 step = ProofStep("hypothesis", hypothesis.get_statement(), 
                                "assumption", hypothesis.get_name())
                 proof_steps.append(step)
                 
             elif self.is_test_statement():
-                # Parse test within proof
                 test = self.test_statement()
                 step = ProofStep("test", test.get_test_condition(), 
-                               "verification", test.get_hypothesis_name(), test.get_test_name())
+                               "verification", None, test.get_test_name())
                 proof_steps.append(step)
                 
             else:
-                # Regular proof step
+                # Regular proof step (could reference axioms)
                 step_statement = self.base_expr()
                 self.match(SEMI)
                 proof_step = ProofStep("statement", step_statement, "direct")
@@ -909,6 +939,7 @@ class Parser:
             proof.mark_complete()
         
         return proof
+    
     def is_declaration(self):
         """Updated to include const declarations"""
         token = self.lexer.get_current_token()
@@ -917,7 +948,7 @@ class Parser:
         """Updated declarations method to handle constants"""
         declarations = []
         
-        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST,THEOREM,PROOF):
+        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM):
             # Handle variable declarations
             if self.lexer.get_current_token().type is VAR:
                 self.match(VAR)
@@ -929,6 +960,8 @@ class Parser:
             elif self.lexer.get_current_token().type is CONST:
                 declarations.append(self.const_declaration())
                 self.match(SEMI)
+            elif self.lexer.get_current_token().type is AXIOM:
+                declarations.append(self.axiom_declaration())
             elif self.lexer.get_current_token().type is THEOREM:
                 declarations.append(self.theorem_declaration())
             elif self.lexer.get_current_token().type is PROOF:

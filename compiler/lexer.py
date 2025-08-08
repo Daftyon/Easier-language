@@ -369,6 +369,10 @@ class Lexer(object):
             self.advance(5)  # "axiom" is 5 characters
             self.current_token = Token(AXIOM, AXIOM)
             return self.current_token
+        elif self.next_characters_are("definition"):
+            self.advance(10)  # "definition" is 10 characters
+            self.current_token = Token(DEFINITION, DEFINITION)
+            return self.current_token
         
             
         else:

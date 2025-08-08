@@ -99,7 +99,7 @@ class Parser:
 
     def is_declaration(self):
         token = self.lexer.get_current_token()
-        return token.type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM)
+        return token.type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM, DEFINITION)
 
     def next_token_is(self, token_type):
         return self.next_tokens_are(token_type)
@@ -939,7 +939,68 @@ class Parser:
             proof.mark_complete()
         
         return proof
+    def is_definition_declaration(self):
+        """Check if next tokens form a definition declaration"""
+        return self.next_tokens_are(DEFINITION)
     
+    def definition_declaration(self):
+        """
+        Grammar for definition:
+        definition_declaration: DEFINITION ID (LPARENT parameter_list RPARENT)? COLON base_expr SEMI
+        
+        Examples:
+        definition even: x === 0;
+        definition prime(n): n > 1 and realistic;
+        definition triangle: true and true and true;
+        definition uncertain_weather: realistic;
+        """
+        self.match(DEFINITION)
+        
+        # Get definition name
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected definition name (identifier) after DEFINITION')
+        
+        definition_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        # Handle optional parameters
+        parameters = []
+        if self.lexer.current_token.type is LPARENT:
+            self.match(LPARENT)
+            parameters = self.definition_parameter_list()
+            self.match(RPARENT)
+        
+        self.match(COLON)
+        
+        # Parse the definition body
+        definition_body = self.base_expr()
+        
+        self.match(SEMI)
+        
+        return DefinitionDeclaration(definition_name, definition_body, parameters)
+    
+    def definition_parameter_list(self):
+        """Parse parameter list for definitions"""
+        parameters = []
+        
+        if self.lexer.get_current_token().type is RPARENT:
+            return parameters
+        
+        # Get first parameter
+        if self.lexer.get_current_token().type is ID:
+            parameters.append(self.lexer.get_current_token().value)
+            self.match(ID)
+        
+        # Get remaining parameters
+        while self.lexer.get_current_token().type is COMMA:
+            self.match(COMMA)
+            if self.lexer.get_current_token().type is ID:
+                parameters.append(self.lexer.get_current_token().value)
+                self.match(ID)
+            else:
+                self.error('Expected parameter name after comma')
+        
+        return parameters
     def is_declaration(self):
         """Updated to include const declarations"""
         token = self.lexer.get_current_token()
@@ -948,7 +1009,7 @@ class Parser:
         """Updated declarations method to handle constants"""
         declarations = []
         
-        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM):
+        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM, DEFINITION):
             # Handle variable declarations
             if self.lexer.get_current_token().type is VAR:
                 self.match(VAR)
@@ -966,6 +1027,8 @@ class Parser:
                 declarations.append(self.theorem_declaration())
             elif self.lexer.get_current_token().type is PROOF:
                 declarations.append(self.proof_declaration())
+            elif self.lexer.get_current_token().type is DEFINITION:
+                declarations.append(self.definition_declaration())
             # Handle function declarations
             while self.lexer.get_current_token().type is FUNCTION:
                 self.match(FUNCTION)

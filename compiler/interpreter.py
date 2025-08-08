@@ -18,6 +18,8 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.hypotheses = {}  # Store active hypotheses
         self.tests = {}  # Store tests
         self.axioms = {}  # Store axioms
+        self.definitions = {}  # Store definitions
+
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -701,5 +703,41 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
                 f"{Colors.MAGENTA}(requires no proof){Colors.RESET}")
             
             return node
+     
+    def visit_DefinitionDeclaration(self, node: DefinitionDeclaration):
+        """Execute definition declaration - register definition"""
+        definition_name = node.get_name()
         
+        # Register definition
+        self.definitions[definition_name] = node
+        
+        # Print colored definition
+        from utils.colors import Colors
+        params_str = f"({', '.join(node.get_parameters())})" if node.has_parameters() else ""
+        
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}[DEFINITION]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{definition_name}{params_str}{Colors.RESET}")
+        print(f"   Body: {Colors.CYAN}{node.get_body()}{Colors.RESET}")
+        
+        if node.has_parameters():
+            print(f"   Parameters: {Colors.YELLOW}{', '.join(node.get_parameters())}{Colors.RESET}")
+        
+        print(f"   Status: {Colors.SUCCESS}DEFINED{Colors.RESET}")
+        
+        return node
+    
+    def lookup_definition(self, name):
+        """Look up a definition by name"""
+        return self.definitions.get(name, None)
+    
+    def apply_definition(self, definition_name, arguments=None):
+        """Apply a definition with given arguments"""
+        definition = self.lookup_definition(definition_name)
+        if not definition:
+            return None
+        
+        # For now, just return the definition body
+        # In a more advanced system, we'd substitute parameters with arguments
+        definition.increment_usage()
+        return definition.get_body()
     

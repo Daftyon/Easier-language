@@ -569,17 +569,17 @@ class ProofDeclaration(AST):
     def __str__(self):
         status = "VALID" if self.is_valid else ("COMPLETE" if self.is_complete else "INCOMPLETE")
         return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
-    
 class ProofStep(AST):
-    """Enhanced proof step that can reference axioms"""
+    """Enhanced proof step that can reference definitions"""
     def __init__(self, step_type: str, statement=None, justification=None, 
-                 hypothesis_name=None, test_name=None, axiom_name=None):
-        self.step_type = step_type              # "statement", "hypothesis", "test", "axiom", etc.
-        self.statement = statement              # The statement being made
-        self.justification = justification      # How this step is justified
-        self.hypothesis_name = hypothesis_name  # Name if this is a hypothesis
-        self.test_name = test_name             # Name if this is a test
-        self.axiom_name = axiom_name           # Name if this references an axiom
+                 hypothesis_name=None, test_name=None, axiom_name=None, definition_name=None):
+        self.step_type = step_type              # Step type
+        self.statement = statement              # The statement
+        self.justification = justification      # Justification
+        self.hypothesis_name = hypothesis_name  # Hypothesis reference
+        self.test_name = test_name             # Test reference
+        self.axiom_name = axiom_name           # Axiom reference
+        self.definition_name = definition_name  # Definition reference
         
     def get_step_type(self):
         return self.step_type
@@ -599,6 +599,9 @@ class ProofStep(AST):
     def get_axiom_name(self):
         return self.axiom_name
     
+    def get_definition_name(self):
+        return self.definition_name
+    
     def is_hypothesis_step(self):
         return self.step_type == "hypothesis"
     
@@ -608,6 +611,9 @@ class ProofStep(AST):
     def is_axiom_step(self):
         return self.step_type == "axiom"
     
+    def is_definition_step(self):
+        return self.step_type == "definition"
+    
     def __str__(self):
         if self.hypothesis_name:
             return f'ProofStep({self.step_type}, {self.hypothesis_name}: {self.statement})'
@@ -615,6 +621,8 @@ class ProofStep(AST):
             return f'ProofStep({self.step_type}, test_{self.test_name}: {self.statement})'
         elif self.axiom_name:
             return f'ProofStep({self.step_type}, axiom_{self.axiom_name}: {self.statement})'
+        elif self.definition_name:
+            return f'ProofStep({self.step_type}, def_{self.definition_name}: {self.statement})'
         return f'ProofStep({self.step_type}, {self.statement})'
 
 class QEDStatement(AST):
@@ -731,3 +739,37 @@ class AxiomDeclaration(AST):
     def __str__(self):
         desc = f", '{self.description}'" if self.description else ""
         return f'Axiom({self.axiom_name}, {self.statement}{desc})'
+
+class DefinitionDeclaration(AST):
+    """Represents a definition of a term or concept"""
+    def __init__(self, definition_name: str, definition_body=None, parameters=None):
+        self.definition_name = definition_name    # Name being defined
+        self.definition_body = definition_body    # The definition content
+        self.parameters = parameters or []        # Parameters for parametric definitions
+        self.is_definition = True                 # Mark as definition
+        self.usage_count = 0                     # Track how often this definition is used
+        
+    def get_name(self):
+        return self.definition_name
+    
+    def get_body(self):
+        return self.definition_body
+    
+    def get_parameters(self):
+        return self.parameters
+    
+    def has_parameters(self):
+        return len(self.parameters) > 0
+    
+    def increment_usage(self):
+        self.usage_count += 1
+    
+    def get_usage_count(self):
+        return self.usage_count
+    
+    def is_definition_declaration(self):
+        return self.is_definition
+    
+    def __str__(self):
+        params = f"({', '.join(self.parameters)})" if self.parameters else ""
+        return f'Definition({self.definition_name}{params}, {self.definition_body})'

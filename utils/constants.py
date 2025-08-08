@@ -59,5 +59,7 @@ QED = 'QED'  # End of proof marker
 HYPOTHESIS = 'HYPOTHESIS'
 TEST = 'TEST'
 AXIOM = 'AXIOM'
+DEFINITION = 'DEFINITION'
+
 
 

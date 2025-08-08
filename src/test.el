@@ -1,5 +1,7 @@
 ALGORITHM testfix {
     theorem simple: true;
+        definition even: true;                    // x is even if x mod 2 = 0 (simplified)
+
         axiom identity: true === true;
  axiom excludedmiddle: true or ! true;
     proof simple {

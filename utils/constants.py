@@ -56,4 +56,5 @@ TERNARY = 'TERNARY'  # New type for three-valued logic
 THEOREM = "THEOREM"  # New keyword for theorem declarations
 PROOF = 'PROOF'
 QED = 'QED'  # End of proof marker
+HYPOTHESIS = 'HYPOTHESIS'
 

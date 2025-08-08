@@ -266,8 +266,8 @@ class Parser:
                or self.is_break() \
                 or self.is_return_stat()\
                 or self.is_show()\
-                or self.is_switch_statement()  # Add this line
-
+               or self.is_switch_statement() \
+               or self.is_hypothesis_statement()
 
     def statement_list(self):
         children = []
@@ -637,6 +637,36 @@ class Parser:
         self.match(WHILE)
         condition = self.bool_expr()
         return DoWhileLoop(statements, condition)
+    def is_hypothesis_statement(self):
+        """Check if next tokens form a hypothesis statement"""
+        return self.next_tokens_are(HYPOTHESIS)
+    
+    def hypothesis_statement(self):
+        """
+        Grammar for hypothesis:
+        hypothesis_statement: HYPOTHESIS ID COLON base_expr SEMI
+        
+        Example:
+        hypothesis p_implies_q: true or false;
+        hypothesis weather_good: realistic;
+        """
+        self.match(HYPOTHESIS)
+        
+        # Get hypothesis name/label
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected hypothesis name (identifier) after HYPOTHESIS')
+        
+        hypothesis_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(COLON)
+        
+        # Parse the hypothesis statement
+        statement = self.base_expr()
+        
+        self.match(SEMI)
+        
+        return HypothesisStatement(hypothesis_name, statement)
     def is_switch_statement(self):
         """Check if next tokens form a switch statement"""
         return self.next_tokens_are(SWITCH)
@@ -685,12 +715,20 @@ class Parser:
             self.error(f"Expected CASE or DEFAULT, got {token.type}")
     
     def case_statement_list(self):
-        """Parse statements within a case block until next case/default/closing brace"""
+        """Enhanced to handle hypothesis statements in proofs"""
         statements = []
         
-        while (self.lexer.get_current_token().type not in (CASE, DEFAULT, RCBRACE) 
+        while (self.lexer.get_current_token().type not in (CASE, DEFAULT, RCBRACE, QED) 
                and self.lexer.get_current_token().type != EOF):
-            if self.is_compound_statement():
+            
+            if self.is_hypothesis_statement():
+                # Parse hypothesis within proof
+                hypothesis = self.hypothesis_statement()
+                # Convert to proof step
+                step = ProofStep("hypothesis", hypothesis.get_statement(), 
+                               "assumption", hypothesis.get_name())
+                statements.append(step)
+            elif self.is_compound_statement():
                 stmt = self.statement()
                 if isinstance(stmt, list):
                     statements.extend(stmt)
@@ -698,6 +736,7 @@ class Parser:
                     statements.append(stmt)
             else:
                 break
+        
         return statements
     def is_const_declaration(self):
             """Check if next tokens form a constant declaration"""
@@ -780,47 +819,35 @@ class Parser:
         return self.next_tokens_are(QED)
     
     def proof_declaration(self):
-        """
-        Grammar for proof:
-        proof_declaration: PROOF ID LCBRACE proof_body RCBRACE
-        proof_body: proof_step* qed_statement
-        proof_step: statement SEMI
-        qed_statement: QED SEMI
-        
-        Example:
-        proof identity_law {
-            true or false;
-            QED;
-        }
-        """
+        """Enhanced proof declaration to handle hypothesis statements"""
         self.match(PROOF)
-        
-        # Get theorem name that this proof is for
-        if self.lexer.get_current_token().type is not ID:
-            self.error('Expected theorem name after PROOF')
         
         theorem_name = self.lexer.get_current_token().value
         self.match(ID)
         
         self.match(LCBRACE)
         
-        # Parse proof body (steps + QED)
         proof_steps = []
         
-        # Parse proof steps until QED
+        # Parse proof steps including hypothesis statements
         while not self.is_qed_statement() and self.lexer.get_current_token().type != RCBRACE:
             if self.lexer.get_current_token().type == EOF:
                 self.error("Unexpected end of file in proof block")
             
-            # For now, parse each step as a base expression
-            step_statement = self.base_expr()
-            self.match(SEMI)
-            
-            # Create a basic proof step
-            proof_step = ProofStep("statement", step_statement, "direct")
-            proof_steps.append(proof_step)
+            if self.is_hypothesis_statement():
+                # Parse hypothesis within proof
+                hypothesis = self.hypothesis_statement()
+                step = ProofStep("hypothesis", hypothesis.get_statement(), 
+                               "assumption", hypothesis.get_name())
+                proof_steps.append(step)
+            else:
+                # Regular proof step
+                step_statement = self.base_expr()
+                self.match(SEMI)
+                proof_step = ProofStep("statement", step_statement, "direct")
+                proof_steps.append(proof_step)
         
-        # Parse QED statement
+        # Parse QED
         qed_found = False
         if self.is_qed_statement():
             self.match(QED)
@@ -829,7 +856,6 @@ class Parser:
         
         self.match(RCBRACE)
         
-        # Create proof declaration
         proof = ProofDeclaration(theorem_name, proof_steps)
         if qed_found:
             proof.mark_complete()

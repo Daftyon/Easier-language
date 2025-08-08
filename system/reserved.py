@@ -36,5 +36,6 @@ RESERVED_KEYWORDS = {
     THEOREM: Token(THEOREM, THEOREM),  # New theorem keyword
     PROOF: Token(PROOF, PROOF),
     QED: Token(QED, QED),
+    HYPOTHESIS: Token(HYPOTHESIS, HYPOTHESIS),
 
 }

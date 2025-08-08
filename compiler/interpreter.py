@@ -16,6 +16,8 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.theorems = {}  # Store theorems during interpretation
         self.proofs = {}    # Store proofs during interpretation
         self.hypotheses = {}  # Store active hypotheses
+        self.tests = {}  # Store tests
+
 
         super().__init__(SymbolTable())
 
@@ -593,6 +595,94 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
             theorem.mark_proven()
         else:
             from utils.colors import ProofConsole
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
+    def visit_TestStatement(self, node: TestStatement):
+        """Execute test statement - test hypothesis against condition"""
+        test_name = node.get_test_name()
+        hypothesis_name = node.get_hypothesis_name()
+        
+        # Get the hypothesis being tested
+        if hypothesis_name not in self.hypotheses:
+            self.error(f"Cannot test unknown hypothesis: {hypothesis_name}")
+        
+        hypothesis = self.hypotheses[hypothesis_name]
+        test_condition = node.get_test_condition()
+        
+        # Evaluate both hypothesis and test condition
+        hypothesis_value = self.visit(hypothesis.get_statement())
+        test_condition_value = self.visit(test_condition)
+        
+        # Determine test result
+        test_result = self.evaluate_test(hypothesis_value, test_condition_value)
+        node.set_test_result(test_result)
+        
+        # Store test
+        self.tests[test_name] = node
+        
+        # Print colored test result
+        from utils.colors import Colors
+        result_color = Colors.SUCCESS if test_result == "PASS" else \
+                      Colors.ERROR if test_result == "FAIL" else Colors.WARNING
+        
+        print(f"{Colors.BRIGHT_YELLOW}{Colors.BOLD}[TEST]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET}: "
+              f"{result_color}{test_result}{Colors.RESET}")
+        print(f"   Hypothesis '{hypothesis_name}': {hypothesis_value}")
+        print(f"   Test condition: {test_condition_value}")
+        
+        return node
+    
+    def evaluate_test(self, hypothesis_value, test_condition_value):
+        """Evaluate test result based on hypothesis and test condition values"""
+        from utils.constants import TRUE, FALSE, REALISTIC
+        
+        # Simple test logic: does hypothesis match test condition?
+        if hypothesis_value == test_condition_value:
+            return "PASS"
+        elif (hypothesis_value == REALISTIC or test_condition_value == REALISTIC):
+            return "UNCERTAIN"  # Realistic values create uncertainty
+        else:
+            return "FAIL"
+    
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Enhanced proof execution with test support"""
+        theorem_name = node.get_theorem_name()
+        
+        if theorem_name not in self.theorems:
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        self.proofs[theorem_name] = node
+        
+        from utils.colors import ProofConsole, Colors
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps with hypothesis and test support
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            if step.is_hypothesis_step():
+                # Display hypothesis step
+                print(f"   {Colors.BRIGHT_CYAN}{i}. [HYPOTHESIS]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_hypothesis_name()}{Colors.RESET}: "
+                      f"{Colors.CYAN}{step.get_statement()}{Colors.RESET}")
+                      
+            elif step.is_test_step():
+                # Display test step
+                print(f"   {Colors.BRIGHT_YELLOW}{i}. [TEST]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_test_name()}{Colors.RESET}: "
+                      f"{Colors.YELLOW}{step.get_statement()}{Colors.RESET}")
+            else:
+                # Regular proof step
+                ProofConsole.proof_step(i, step.get_statement())
+        
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
             ProofConsole.proof_incomplete(theorem_name)
         
         return node

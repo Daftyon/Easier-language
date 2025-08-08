@@ -569,14 +569,15 @@ class ProofDeclaration(AST):
     def __str__(self):
         status = "VALID" if self.is_valid else ("COMPLETE" if self.is_complete else "INCOMPLETE")
         return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
-
 class ProofStep(AST):
-    """Enhanced proof step that can handle different types including hypothesis"""
-    def __init__(self, step_type: str, statement=None, justification=None, hypothesis_name=None):
-        self.step_type = step_type          # Type: "statement", "hypothesis", "assumption", etc.
-        self.statement = statement          # The statement being made
-        self.justification = justification  # How this step is justified
+    """Enhanced proof step that can handle different types including tests"""
+    def __init__(self, step_type: str, statement=None, justification=None, 
+                 hypothesis_name=None, test_name=None):
+        self.step_type = step_type              # "statement", "hypothesis", "test", etc.
+        self.statement = statement              # The statement being made
+        self.justification = justification      # How this step is justified
         self.hypothesis_name = hypothesis_name  # Name if this is a hypothesis
+        self.test_name = test_name             # Name if this is a test
         
     def get_step_type(self):
         return self.step_type
@@ -590,14 +591,21 @@ class ProofStep(AST):
     def get_hypothesis_name(self):
         return self.hypothesis_name
     
+    def get_test_name(self):  # ✅ This method was missing
+        return self.test_name
+    
     def is_hypothesis_step(self):
         return self.step_type == "hypothesis"
+    
+    def is_test_step(self):  # ✅ This method was also missing
+        return self.step_type == "test"
     
     def __str__(self):
         if self.hypothesis_name:
             return f'ProofStep({self.step_type}, {self.hypothesis_name}: {self.statement})'
-        return f'ProofStep({self.step_type}, {self.statement}, {self.justification})'
-
+        elif self.test_name:
+            return f'ProofStep({self.step_type}, test_{self.test_name}: {self.statement})'
+        return f'ProofStep({self.step_type}, {self.statement})'
 class QEDStatement(AST):
     """Represents the end of proof marker"""
     def __init__(self):
@@ -646,3 +654,41 @@ class TheoremDeclaration(AST):
         proof_info = f" (with proof)" if self.proof else ""
         return f'Theorem({self.theorem_name}, {self.statement}, {status}{proof_info})'
 
+
+class TestStatement(AST):
+    """Represents a test of a hypothesis or assumption"""
+    def __init__(self, test_name: str, hypothesis_name: str, test_condition=None):
+        self.test_name = test_name              # Name of the test
+        self.hypothesis_name = hypothesis_name  # Which hypothesis to test
+        self.test_condition = test_condition    # Condition to test against
+        self.test_result = None                 # Result of the test (pass/fail/uncertain)
+        self.is_executed = False                # Whether test has been run
+        
+    def get_test_name(self):
+        return self.test_name
+    
+    def get_hypothesis_name(self):
+        return self.hypothesis_name
+    
+    def get_test_condition(self):  # ✅ This method was missing
+        return self.test_condition
+    
+    def set_test_result(self, result):
+        self.test_result = result
+        self.is_executed = True
+    
+    def get_test_result(self):
+        return self.test_result
+    
+    def is_test_passed(self):
+        return self.test_result == "PASS"
+    
+    def is_test_failed(self):
+        return self.test_result == "FAIL"
+    
+    def is_test_uncertain(self):
+        return self.test_result == "UNCERTAIN"
+    
+    def __str__(self):
+        status = f"({self.test_result})" if self.is_executed else "(not executed)"
+        return f'Test({self.test_name}, {self.hypothesis_name}, {status})'

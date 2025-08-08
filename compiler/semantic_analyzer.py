@@ -13,6 +13,8 @@ class SemanticAnalyzer(NodeVisitor):
         self.theorems = {}  # Dictionary to store theorems by name
         self.proofs = {}
         self.hypotheses = {}  # Track hypotheses
+        self.tests = {}  # Track tests
+
 
 
 
@@ -390,5 +392,30 @@ class SemanticAnalyzer(NodeVisitor):
         self.hypotheses[hypothesis_name] = node
         
         print(f"{Colors.BRIGHT_CYAN}[HYPOTHESIS]{Colors.RESET} {Colors.BRIGHT_WHITE}{hypothesis_name}{Colors.RESET} assumed")
+    def visit_TestStatement(self, node: TestStatement):
+        """Semantic analysis for test statements"""
+        test_name = node.get_test_name()
+        hypothesis_name = node.get_hypothesis_name()
+        
+        # Check if test name conflicts
+        if test_name in self.tests:
+            self.error(ErrorCode.DUPLICATE_ID, f"Test '{test_name}' is already defined")
+        
+        # Check if hypothesis being tested exists
+        if hypothesis_name not in self.hypotheses:
+            self.error(ErrorCode.ID_NOT_FOUND, 
+                     f"Cannot test unknown hypothesis '{hypothesis_name}'")
+        
+        # Analyze the test condition
+        if node.get_test_condition() is not None:
+            self.visit(node.get_test_condition())
+        
+        # Register test
+        self.tests[test_name] = node
+        
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_YELLOW}[TEST]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET} "
+              f"for hypothesis {Colors.CYAN}{hypothesis_name}{Colors.RESET}")
         
    

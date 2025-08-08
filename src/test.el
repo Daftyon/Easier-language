@@ -9,5 +9,18 @@ ALGORITHM testproofs {
         true;                        // Therefore Q (simplified)
         QED;
     }
-    SHOW("Proofs working!");
+
+    // Medical diagnosis with testing
+    theorem medicaldiagnosis: realistic;
+    
+    proof medicaldiagnosis {
+        hypothesis symptomspresent: realistic;      // Symptoms are uncertain
+        test verifysymptoms: symptomspresent: true; // Test if symptoms are definitive
+        
+        hypothesis testpositive: true;             // Test result is positive
+        test checktest: testpositive: true;       // Verify test result
+        
+        realistic;                                  // Conclusion: further investigation needed
+        QED;
+    }
 }

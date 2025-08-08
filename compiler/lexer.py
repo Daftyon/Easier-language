@@ -361,6 +361,10 @@ class Lexer(object):
             self.advance(10)  # "hypothesis" is 10 characters
             self.current_token = Token(HYPOTHESIS, HYPOTHESIS)
             return self.current_token
+        elif self.next_characters_are("test"):
+            self.advance(4)  # "test" is 4 characters
+            self.current_token = Token(TEST, TEST)
+            return self.current_token
     
             
         else:

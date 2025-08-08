@@ -267,7 +267,8 @@ class Parser:
                 or self.is_return_stat()\
                 or self.is_show()\
                or self.is_switch_statement() \
-               or self.is_hypothesis_statement()
+               or self.is_hypothesis_statement() \
+               or self.is_test_statement()
 
     def statement_list(self):
         children = []
@@ -809,6 +810,45 @@ class Parser:
         self.match(SEMI)
         
         return TheoremDeclaration(theorem_name, statement)
+    def is_test_statement(self):
+        """Check if next tokens form a test statement"""
+        return self.next_tokens_are(TEST)
+    
+    def test_statement(self):
+        """
+        Grammar for test:
+        test_statement: TEST ID COLON ID COLON base_expr SEMI
+        
+        Example:
+        test verify_p: p: true;
+        test check_weather: weather_good: realistic;
+        """
+        self.match(TEST)
+        
+        # Get test name
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected test name (identifier) after TEST')
+        
+        test_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(COLON)
+        
+        # Get hypothesis name to test
+        if self.lexer.get_current_token().type is not ID:
+            self.error('Expected hypothesis name after colon in test')
+        
+        hypothesis_name = self.lexer.get_current_token().value
+        self.match(ID)
+        
+        self.match(COLON)
+        
+        # Parse the test condition
+        test_condition = self.base_expr()
+        
+        self.match(SEMI)
+        
+        return TestStatement(test_name, hypothesis_name, test_condition)
 
     def is_proof_declaration(self):
         """Check if next tokens form a proof declaration"""
@@ -819,7 +859,7 @@ class Parser:
         return self.next_tokens_are(QED)
     
     def proof_declaration(self):
-        """Enhanced proof declaration to handle hypothesis statements"""
+        """Enhanced proof declaration to handle test statements"""
         self.match(PROOF)
         
         theorem_name = self.lexer.get_current_token().value
@@ -829,7 +869,7 @@ class Parser:
         
         proof_steps = []
         
-        # Parse proof steps including hypothesis statements
+        # Parse proof steps including hypothesis and test statements
         while not self.is_qed_statement() and self.lexer.get_current_token().type != RCBRACE:
             if self.lexer.get_current_token().type == EOF:
                 self.error("Unexpected end of file in proof block")
@@ -840,6 +880,14 @@ class Parser:
                 step = ProofStep("hypothesis", hypothesis.get_statement(), 
                                "assumption", hypothesis.get_name())
                 proof_steps.append(step)
+                
+            elif self.is_test_statement():
+                # Parse test within proof
+                test = self.test_statement()
+                step = ProofStep("test", test.get_test_condition(), 
+                               "verification", test.get_hypothesis_name(), test.get_test_name())
+                proof_steps.append(step)
+                
             else:
                 # Regular proof step
                 step_statement = self.base_expr()

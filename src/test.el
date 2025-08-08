@@ -12,6 +12,10 @@ ALGORITHM testproofs {
         realistic or true;  
         QED;
     }
-    
+    theorem noncontradiction: ! (true and false);
+    proof noncontradiction {
+        ! (true and false);  // false negated is true
+        QED;
+    }
     SHOW("Proofs working!");
 }

@@ -29,7 +29,7 @@ except ImportError as e:
     print(f"Error: Unable to import El components: {e}")
     sys.exit(1)
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 __author__ = "El Language Team"
 
 class ElREPL:

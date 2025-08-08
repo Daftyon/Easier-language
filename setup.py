@@ -11,7 +11,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 setup(
     name="el-language",
-    version="1.0.6",
+    version="1.0.7",
     description="El Programming Language",
     author="AHMED HAFDI",
     author_email="ahmed.hafdi.contact@gmail.com",

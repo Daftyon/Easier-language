@@ -37,4 +37,4 @@ CMD ["--help"]
 LABEL org.opencontainers.image.title="El Programming Language"
 LABEL org.opencontainers.image.description="A modern and easy programming language"
 LABEL org.opencontainers.image.source="https://github.com/Daftyon/Easier-language"
-LABEL org.opencontainers.image.version="1.0.3"
+LABEL org.opencontainers.image.version="1.0.5"

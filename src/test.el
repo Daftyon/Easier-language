@@ -8,10 +8,10 @@ ALGORITHM testproofs {
     
     theorem threevalued: realistic or realistic;
     
-    // proof threevalued {
-    //     realistic or true;  
-    //     QED;
-    // }
+    proof threevalued {
+        realistic or true;  
+        QED;
+    }
     theorem noncontradiction: ! (true and false);
     proof noncontradiction {
         ! (false and false);  // false negated is true

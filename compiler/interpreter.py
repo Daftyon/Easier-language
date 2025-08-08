@@ -15,6 +15,7 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.tree = tree
         self.theorems = {}  # Store theorems during interpretation
         self.proofs = {}    # Store proofs during interpretation
+        self.hypotheses = {}  # Store active hypotheses
 
         super().__init__(SymbolTable())
 
@@ -543,6 +544,58 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         """Execute QED statement"""
         # QED marks end of proof
         return "QED"
+    
+    def visit_HypothesisStatement(self, node: HypothesisStatement):
+        """Execute hypothesis statement - add assumption to context"""
+        hypothesis_name = node.get_name()
+        
+        # Register hypothesis
+        self.hypotheses[hypothesis_name] = node
+        
+        # Print colored hypothesis
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}[HYPOTHESIS]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{hypothesis_name}{Colors.RESET}: "
+              f"{Colors.CYAN}{node.get_statement()}{Colors.RESET} "
+              f"{Colors.YELLOW}(assumed){Colors.RESET}")
+        
+        return node
+    
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Enhanced proof execution with hypothesis support"""
+        theorem_name = node.get_theorem_name()
+        
+        if theorem_name not in self.theorems:
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        self.proofs[theorem_name] = node
+        
+        from utils.colors import ProofConsole, Colors
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps with hypothesis support
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            if step.is_hypothesis_step():
+                # Display hypothesis step
+                print(f"   {Colors.BRIGHT_CYAN}{i}. [HYPOTHESIS]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_hypothesis_name()}{Colors.RESET}: "
+                      f"{Colors.CYAN}{step.get_statement()}{Colors.RESET}")
+            else:
+                # Regular proof step
+                ProofConsole.proof_step(i, step.get_statement())
+        
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            from utils.colors import ProofConsole
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
 
     
     

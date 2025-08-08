@@ -517,6 +517,25 @@ class BooleanSymbol:
     
     def __str__(self):
         return f'BooleanSymbol({self.value}, probability={self.probability})'
+
+class HypothesisStatement(AST):
+    """Represents a hypothesis in a proof"""
+    def __init__(self, hypothesis_name: str, statement=None):
+        self.hypothesis_name = hypothesis_name  # Name/label for the hypothesis
+        self.statement = statement              # The assumed statement
+        self.is_assumption = True               # Mark as assumption (not proven)
+        
+    def get_name(self):
+        return self.hypothesis_name
+    
+    def get_statement(self):
+        return self.statement
+    
+    def is_hypothesis(self):
+        return self.is_assumption
+    
+    def __str__(self):
+        return f'Hypothesis({self.hypothesis_name}, {self.statement})'
 class ProofDeclaration(AST):
     """Represents a proof for a theorem"""
     def __init__(self, theorem_name: str, proof_steps=None):
@@ -552,11 +571,12 @@ class ProofDeclaration(AST):
         return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
 
 class ProofStep(AST):
-    """Represents a single step in a proof"""
-    def __init__(self, step_type: str, statement=None, justification=None):
-        self.step_type = step_type          # Type of proof step (assume, show, etc.)
+    """Enhanced proof step that can handle different types including hypothesis"""
+    def __init__(self, step_type: str, statement=None, justification=None, hypothesis_name=None):
+        self.step_type = step_type          # Type: "statement", "hypothesis", "assumption", etc.
         self.statement = statement          # The statement being made
         self.justification = justification  # How this step is justified
+        self.hypothesis_name = hypothesis_name  # Name if this is a hypothesis
         
     def get_step_type(self):
         return self.step_type
@@ -567,7 +587,15 @@ class ProofStep(AST):
     def get_justification(self):
         return self.justification
     
+    def get_hypothesis_name(self):
+        return self.hypothesis_name
+    
+    def is_hypothesis_step(self):
+        return self.step_type == "hypothesis"
+    
     def __str__(self):
+        if self.hypothesis_name:
+            return f'ProofStep({self.step_type}, {self.hypothesis_name}: {self.statement})'
         return f'ProofStep({self.step_type}, {self.statement}, {self.justification})'
 
 class QEDStatement(AST):

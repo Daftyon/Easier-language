@@ -12,6 +12,8 @@ class SemanticAnalyzer(NodeVisitor):
         self.symbol_table = SymbolTable()
         self.theorems = {}  # Dictionary to store theorems by name
         self.proofs = {}
+        self.hypotheses = {}  # Track hypotheses
+
 
 
     def error(self, error_code, message):
@@ -372,6 +374,21 @@ class SemanticAnalyzer(NodeVisitor):
         """Semantic analysis for QED statements"""
         # QED statements are always valid
         pass
-
+    def visit_HypothesisStatement(self, node: HypothesisStatement):
+        """Semantic analysis for hypothesis statements"""
+        hypothesis_name = node.get_name()
+        
+        # Check if hypothesis name conflicts
+        if hypothesis_name in self.hypotheses:
+            self.error(ErrorCode.DUPLICATE_ID, f"Hypothesis '{hypothesis_name}' is already defined")
+        
+        # Analyze the hypothesis statement
+        if node.get_statement() is not None:
+            self.visit(node.get_statement())
+        
+        # Register hypothesis
+        self.hypotheses[hypothesis_name] = node
+        
+        print(f"{Colors.BRIGHT_CYAN}[HYPOTHESIS]{Colors.RESET} {Colors.BRIGHT_WHITE}{hypothesis_name}{Colors.RESET} assumed")
         
    

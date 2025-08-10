@@ -569,14 +569,17 @@ class ProofDeclaration(AST):
     def __str__(self):
         status = "VALID" if self.is_valid else ("COMPLETE" if self.is_complete else "INCOMPLETE")
         return f'Proof({self.theorem_name}, {len(self.proof_steps)} steps, {status})'
-
 class ProofStep(AST):
-    """Enhanced proof step that can handle different types including hypothesis"""
-    def __init__(self, step_type: str, statement=None, justification=None, hypothesis_name=None):
-        self.step_type = step_type          # Type: "statement", "hypothesis", "assumption", etc.
-        self.statement = statement          # The statement being made
-        self.justification = justification  # How this step is justified
-        self.hypothesis_name = hypothesis_name  # Name if this is a hypothesis
+    """Enhanced proof step that can reference definitions"""
+    def __init__(self, step_type: str, statement=None, justification=None, 
+                 hypothesis_name=None, test_name=None, axiom_name=None, definition_name=None):
+        self.step_type = step_type              # Step type
+        self.statement = statement              # The statement
+        self.justification = justification      # Justification
+        self.hypothesis_name = hypothesis_name  # Hypothesis reference
+        self.test_name = test_name             # Test reference
+        self.axiom_name = axiom_name           # Axiom reference
+        self.definition_name = definition_name  # Definition reference
         
     def get_step_type(self):
         return self.step_type
@@ -590,13 +593,37 @@ class ProofStep(AST):
     def get_hypothesis_name(self):
         return self.hypothesis_name
     
+    def get_test_name(self):
+        return self.test_name
+    
+    def get_axiom_name(self):
+        return self.axiom_name
+    
+    def get_definition_name(self):
+        return self.definition_name
+    
     def is_hypothesis_step(self):
         return self.step_type == "hypothesis"
+    
+    def is_test_step(self):
+        return self.step_type == "test"
+    
+    def is_axiom_step(self):
+        return self.step_type == "axiom"
+    
+    def is_definition_step(self):
+        return self.step_type == "definition"
     
     def __str__(self):
         if self.hypothesis_name:
             return f'ProofStep({self.step_type}, {self.hypothesis_name}: {self.statement})'
-        return f'ProofStep({self.step_type}, {self.statement}, {self.justification})'
+        elif self.test_name:
+            return f'ProofStep({self.step_type}, test_{self.test_name}: {self.statement})'
+        elif self.axiom_name:
+            return f'ProofStep({self.step_type}, axiom_{self.axiom_name}: {self.statement})'
+        elif self.definition_name:
+            return f'ProofStep({self.step_type}, def_{self.definition_name}: {self.statement})'
+        return f'ProofStep({self.step_type}, {self.statement})'
 
 class QEDStatement(AST):
     """Represents the end of proof marker"""
@@ -646,3 +673,103 @@ class TheoremDeclaration(AST):
         proof_info = f" (with proof)" if self.proof else ""
         return f'Theorem({self.theorem_name}, {self.statement}, {status}{proof_info})'
 
+
+class TestStatement(AST):
+    """Represents a test of a hypothesis or assumption"""
+    def __init__(self, test_name: str, hypothesis_name: str, test_condition=None):
+        self.test_name = test_name              # Name of the test
+        self.hypothesis_name = hypothesis_name  # Which hypothesis to test
+        self.test_condition = test_condition    # Condition to test against
+        self.test_result = None                 # Result of the test (pass/fail/uncertain)
+        self.is_executed = False                # Whether test has been run
+        
+    def get_test_name(self):
+        return self.test_name
+    
+    def get_hypothesis_name(self):
+        return self.hypothesis_name
+    
+    def get_test_condition(self):  # ✅ This method was missing
+        return self.test_condition
+    
+    def set_test_result(self, result):
+        self.test_result = result
+        self.is_executed = True
+    
+    def get_test_result(self):
+        return self.test_result
+    
+    def is_test_passed(self):
+        return self.test_result == "PASS"
+    
+    def is_test_failed(self):
+        return self.test_result == "FAIL"
+    
+    def is_test_uncertain(self):
+        return self.test_result == "UNCERTAIN"
+    
+    def __str__(self):
+        status = f"({self.test_result})" if self.is_executed else "(not executed)"
+        return f'Test({self.test_name}, {self.hypothesis_name}, {status})'
+
+class AxiomDeclaration(AST):
+    """Represents an axiom - a fundamental truth that doesn't need proof"""
+    def __init__(self, axiom_name: str, statement=None, description=None):
+        self.axiom_name = axiom_name        # Name of the axiom
+        self.statement = statement          # The axiom statement (always true)
+        self.description = description      # Optional description
+        self.is_axiom = True               # Mark as axiom (self-evident)
+        self.is_proven = True              # Axioms are considered proven by definition
+        
+    def get_name(self):
+        return self.axiom_name
+    
+    def get_statement(self):
+        return self.statement
+    
+    def get_description(self):
+        return self.description
+    
+    def is_axiom_declaration(self):
+        return self.is_axiom
+    
+    def is_axiom_proven(self):
+        return self.is_proven  # Axioms are always "proven"
+    
+    def __str__(self):
+        desc = f", '{self.description}'" if self.description else ""
+        return f'Axiom({self.axiom_name}, {self.statement}{desc})'
+
+class DefinitionDeclaration(AST):
+    """Represents a definition of a term or concept"""
+    def __init__(self, definition_name: str, definition_body=None, parameters=None):
+        self.definition_name = definition_name    # Name being defined
+        self.definition_body = definition_body    # The definition content
+        self.parameters = parameters or []        # Parameters for parametric definitions
+        self.is_definition = True                 # Mark as definition
+        self.usage_count = 0                     # Track how often this definition is used
+        
+    def get_name(self):
+        return self.definition_name
+    
+    def get_body(self):
+        return self.definition_body
+    
+    def get_parameters(self):
+        return self.parameters
+    
+    def has_parameters(self):
+        return len(self.parameters) > 0
+    
+    def increment_usage(self):
+        self.usage_count += 1
+    
+    def get_usage_count(self):
+        return self.usage_count
+    
+    def is_definition_declaration(self):
+        return self.is_definition
+    
+    def __str__(self):
+        params = f"({', '.join(self.parameters)})" if self.parameters else ""
+        return f'Definition({self.definition_name}{params}, {self.definition_body})'

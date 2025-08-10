@@ -13,6 +13,10 @@ class SemanticAnalyzer(NodeVisitor):
         self.theorems = {}  # Dictionary to store theorems by name
         self.proofs = {}
         self.hypotheses = {}  # Track hypotheses
+        self.tests = {}  # Track tests
+        self.axioms = {}  # Track axioms
+        self.definitions = {}  # Track definitions
+
 
 
 
@@ -390,5 +394,87 @@ class SemanticAnalyzer(NodeVisitor):
         self.hypotheses[hypothesis_name] = node
         
         print(f"{Colors.BRIGHT_CYAN}[HYPOTHESIS]{Colors.RESET} {Colors.BRIGHT_WHITE}{hypothesis_name}{Colors.RESET} assumed")
+    def visit_TestStatement(self, node: TestStatement):
+        """Semantic analysis for test statements"""
+        test_name = node.get_test_name()
+        hypothesis_name = node.get_hypothesis_name()
         
+        # Check if test name conflicts
+        if test_name in self.tests:
+            self.error(ErrorCode.DUPLICATE_ID, f"Test '{test_name}' is already defined")
+        
+        # Check if hypothesis being tested exists
+        if hypothesis_name not in self.hypotheses:
+            self.error(ErrorCode.ID_NOT_FOUND, 
+                     f"Cannot test unknown hypothesis '{hypothesis_name}'")
+        
+        # Analyze the test condition
+        if node.get_test_condition() is not None:
+            self.visit(node.get_test_condition())
+        
+        # Register test
+        self.tests[test_name] = node
+        
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_YELLOW}[TEST]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET} "
+              f"for hypothesis {Colors.CYAN}{hypothesis_name}{Colors.RESET}")
+    def visit_AxiomDeclaration(self, node: AxiomDeclaration):
+        """Semantic analysis for axiom declarations"""
+        axiom_name = node.get_name()
+        
+        # Check if axiom name conflicts
+        if axiom_name in self.axioms:
+            self.error(ErrorCode.DUPLICATE_ID, f"Axiom '{axiom_name}' is already defined")
+        
+        # Check if axiom name conflicts with other identifiers
+        if (axiom_name in self.theorems or 
+            self.symbol_table.is_defined(axiom_name)):
+            self.error(ErrorCode.DUPLICATE_ID, 
+                     f"Axiom name '{axiom_name}' conflicts with existing identifier")
+        
+        # Analyze the axiom statement
+        if node.get_statement() is not None:
+            self.visit(node.get_statement())
+        
+        # Register axiom
+        self.axioms[axiom_name] = node
+        
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_MAGENTA}[AXIOM]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{axiom_name}{Colors.RESET} "
+              f"{Colors.MAGENTA}(self-evident truth){Colors.RESET}")    
+ 
+    def visit_DefinitionDeclaration(self, node: DefinitionDeclaration):
+        """Semantic analysis for definition declarations"""
+        definition_name = node.get_name()
+        
+        # Check if definition name conflicts
+        if definition_name in self.definitions:
+            self.error(ErrorCode.DUPLICATE_ID, f"Definition '{definition_name}' is already defined")
+        
+        # Check if definition name conflicts with other identifiers
+        if (definition_name in self.theorems or 
+            definition_name in self.axioms or
+            self.symbol_table.is_defined(definition_name)):
+            self.error(ErrorCode.DUPLICATE_ID, 
+                     f"Definition name '{definition_name}' conflicts with existing identifier")
+        
+        # Analyze the definition body
+        if node.get_body() is not None:
+            self.visit(node.get_body())
+        
+        # Validate parameters (ensure they're not already defined)
+        for param in node.get_parameters():
+            if self.symbol_table.is_defined(param):
+                print(f"Warning: Definition parameter '{param}' shadows existing identifier")
+        
+        # Register definition
+        self.definitions[definition_name] = node
+        
+        from utils.colors import Colors
+        params_str = f"({', '.join(node.get_parameters())})" if node.has_parameters() else ""
+        print(f"{Colors.BRIGHT_CYAN}[DEFINITION]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{definition_name}{params_str}{Colors.RESET} "
+              f"{Colors.CYAN}defined{Colors.RESET}")
    

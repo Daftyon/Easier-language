@@ -22,7 +22,7 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.axioms = {}  # Store axioms
         self.definitions = {}  # Store definitions
         self.brought_packages = {}  # Store imported packages
-        # self.package_manager = EasierHubPackageManager()
+        self.package_manager = EasierHubPackageManager()
         super().__init__(SymbolTable())
 
     def error(self, message):

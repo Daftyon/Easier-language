@@ -27,6 +27,7 @@ try:
     from utils.errors import *
     from requests import *
     from compiler import *
+    from bring_parser import *
 except ImportError as e:
     print(f"Error: Unable to import El components: {e}")
     sys.exit(1)

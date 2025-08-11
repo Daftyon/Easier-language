@@ -11,6 +11,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from requests import *
+from bring_parser import *
 def run_command(cmd, cwd=None):
     """Execute a system command"""
     print(f"🔧 Executing: {cmd}")
@@ -26,7 +27,7 @@ def check_dependencies():
     """Check that dependencies are installed"""
     print("🔍 Checking dependencies...")
     
-    dependencies = ['pyinstaller', 'requests', 'compiler', 'utils', 'system']
+    dependencies = ['pyinstaller', 'requests', 'compiler', 'utils', 'system','bring_parser']
     optional_dependencies = ['PIL']  # Pillow for icon handling
     missing = []
     missing_optional = []

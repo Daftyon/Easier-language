@@ -1,5 +1,5 @@
 ALGORITHM testfix {
-    bring hello;
+    bring variables;
 
    
 }

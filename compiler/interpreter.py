@@ -843,4 +843,122 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
                 items.append(key)
         
         return items
-    
+    def parse_content_key(self, key: str) -> tuple:
+        """Parse content key to extract type and name"""
+        if ':' in key:
+            content_type, item_name = key.split(':', 1)
+            return content_type, item_name
+        else:
+            return 'unknown', key
+    def process_tar_package_content(self, bring_node: BringStatement, package_data: Dict[str, Any]):
+        """Process tar package content into symbol table"""
+        content = package_data.get('content', {})
+        metadata = package_data.get('metadata', {})
+        alias = bring_node.get_alias()
+        specific_items = bring_node.get_specific_items()
+        
+        # Create package namespace in symbol table
+        package_symbols = {}
+        imported_items = []
+        
+        try:
+            # Process different types of content from tar package
+            for key, value in content.items():
+                content_type, item_name = self.parse_content_key(key)
+                
+                if content_type == 'el':
+                    # EL source code - could contain function definitions, variables, etc.
+                    # For now, we'll store the source code as a string
+                    # In a full implementation, you might want to parse and execute it
+                    package_symbols[item_name] = {'type': 'el_source', 'content': value}
+                    imported_items.append(f"el:{item_name}")
+                
+                elif content_type == 'bring':
+                    # Bring definitions - structured package definitions
+                    if isinstance(value, dict):
+                        package_symbols[item_name] = value
+                    else:
+                        package_symbols[item_name] = {'type': 'bring_def', 'content': value}
+                    imported_items.append(f"bring:{item_name}")
+                
+                elif content_type == 'json':
+                    # JSON configuration or data
+                    package_symbols[item_name] = {'type': 'json_data', 'data': value}
+                    imported_items.append(f"json:{item_name}")
+                
+                elif content_type == 'text':
+                    # Text files (documentation, etc.)
+                    package_symbols[item_name] = {'type': 'text', 'content': value}
+                    imported_items.append(f"text:{item_name}")
+                
+                elif content_type == 'file':
+                    # File references
+                    package_symbols[item_name] = {'type': 'file_ref', 'path': value}
+                    imported_items.append(f"file:{item_name}")
+                
+                else:
+                    # Unknown content type - store as-is
+                    package_symbols[item_name] = {'type': 'unknown', 'content': value}
+                    imported_items.append(f"unknown:{item_name}")
+            
+            # Handle specific imports vs. global import
+            if specific_items:
+                # Import only specific items
+                for item in specific_items:
+                    if item in package_symbols:
+                        # Define the item directly in current scope
+                        symbol_value = package_symbols[item]
+                        self.symbol_table.define(Symbol(item, symbol_value))
+                        print(f"  ✓ {Colors.GREEN}Imported {item}{Colors.RESET}")
+                    else:
+                        print(f"  ✗ {Colors.ERROR}{item} not found in package{Colors.RESET}")
+            else:
+                # Import entire package under alias
+                package_obj = {
+                    'metadata': metadata,
+                    'items': package_symbols,
+                    'imported_items': imported_items
+                }
+                self.symbol_table.define(Symbol(alias, package_obj))
+                print(f"  ✓ {Colors.GREEN}Package imported as '{alias}'{Colors.RESET}")
+        
+        except Exception as e:
+            print(f"{Colors.ERROR}[ERROR]{Colors.RESET} Error processing package content: {e}")
+            # Create minimal package object even if processing fails
+            package_obj = {
+                'metadata': metadata,
+                'items': {},
+                'error': str(e)
+            }
+            self.symbol_table.define(Symbol(alias, package_obj))
+                
+    def display_package_info(self, package_data: Dict[str, Any], specific_items: List[str] = None):
+            """Display information about the loaded package"""
+            metadata = package_data.get('metadata', {})
+            content = package_data.get('content', {})
+            
+            # Show package metadata
+            if 'description' in metadata:
+                print(f"  📝 {Colors.CYAN}Description:{Colors.RESET} {metadata['description']}")
+            
+            if 'files' in metadata:
+                file_count = len(metadata['files'])
+                print(f"  📁 {Colors.CYAN}Files:{Colors.RESET} {file_count} files extracted")
+            
+            # Show available items
+            available_items = list(content.keys())
+            if available_items:
+                if specific_items:
+                    print(f"  📦 {Colors.CYAN}Requested items:{Colors.RESET}")
+                    for item in specific_items:
+                        status = "✓" if any(item in key for key in available_items) else "✗"
+                        color = Colors.GREEN if status == "✓" else Colors.ERROR
+                        print(f"    {status} {color}{item}{Colors.RESET}")
+                else:
+                    print(f"  📦 {Colors.CYAN}Available items:{Colors.RESET} {len(available_items)}")
+                    # Show first few items
+                    for item in available_items[:5]:
+                        content_type, item_name = self.parse_content_key(item)
+                        print(f"    • {Colors.YELLOW}{content_type}{Colors.RESET}:{item_name}")
+                    if len(available_items) > 5:
+                        print(f"    ... and {len(available_items) - 5} more")

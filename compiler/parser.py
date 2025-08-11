@@ -1001,6 +1001,100 @@ class Parser:
                 self.error('Expected parameter name after comma')
         
         return parameters
+    def is_bring_statement(self):
+        """Check if next tokens form a bring statement"""
+        return self.next_tokens_are(BRING)
+    def skip_whitespace(self):
+        """Skip whitespace and newlines"""
+        while (not self.lexer.is_pointer_out_of_text() and 
+               self.lexer.get_current_character() and 
+               self.lexer.get_current_character().isspace()):
+            self.lexer.advance()
+    
+    def bring_statement(self):
+        """
+        Grammar for bring statements:
+        bring_statement: BRING package_name (FROM source)? (AS alias)? SEMI
+                      | BRING LCBRACE item_list RCBRACE FROM package_name SEMI
+        
+        Examples:
+        bring math_utils;
+        bring linear_algebra from scientific_hub;
+        bring neural_networks as nn;
+        bring { Vector, Matrix, LinearAlgebra } from math_package;
+        """
+        self.match(BRING)
+        self.skip_whitespace()
+        
+        specific_items = []
+        package_name = None
+        
+        # Check for specific items import: bring { item1, item2 }
+        if self.lexer.get_current_token().type == LCBRACE:
+            self.match(LCBRACE)
+            self.skip_whitespace()
+            
+            # Parse item list
+            while (self.lexer.get_current_token().type != RCBRACE and 
+                   self.lexer.get_current_token().type != EOF):
+                
+                if self.lexer.get_current_token().type == ID:
+                    specific_items.append(self.lexer.get_current_token().value)
+                    self.match(ID)
+                    self.skip_whitespace()
+                    
+                    if self.lexer.get_current_token().type == COMMA:
+                        self.match(COMMA)
+                        self.skip_whitespace()
+                else:
+                    self.error("Expected identifier in import list")
+            
+            self.match(RCBRACE)
+            self.skip_whitespace()
+            
+            # Must have FROM clause for specific imports
+            self.match(FROM)
+            self.skip_whitespace()
+            
+            if self.lexer.get_current_token().type != ID:
+                self.error("Expected package name after FROM")
+            package_name = self.lexer.get_current_token().value
+            self.match(ID)
+            
+        else:
+            # Regular package import: bring package_name
+            if self.lexer.get_current_token().type != ID:
+                self.error("Expected package name after BRING")
+            package_name = self.lexer.get_current_token().value
+            self.match(ID)
+        
+        self.skip_whitespace()
+        
+        # Optional FROM clause
+        source_hub = None
+        if self.lexer.get_current_token().type == FROM:
+            self.match(FROM)
+            self.skip_whitespace()
+            if self.lexer.get_current_token().type != ID:
+                self.error("Expected hub name after FROM")
+            source_hub = self.lexer.get_current_token().value
+            self.match(ID)
+            self.skip_whitespace()
+        
+        # Optional AS clause (alias)
+        alias = None
+        if self.lexer.get_current_token().type == AS:
+            self.match(AS)
+            self.skip_whitespace()
+            if self.lexer.get_current_token().type != ID:
+                self.error("Expected alias name after AS")
+            alias = self.lexer.get_current_token().value
+            self.match(ID)
+            self.skip_whitespace()
+        
+        self.match(SEMI)
+        
+        return BringStatement(package_name, source_hub, alias, specific_items)
     def is_declaration(self):
         """Updated to include const declarations"""
         token = self.lexer.get_current_token()
@@ -1009,7 +1103,7 @@ class Parser:
         """Updated declarations method to handle constants"""
         declarations = []
         
-        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM, DEFINITION):
+        while self.lexer.get_current_token().type in (VAR, FUNCTION, CONST, THEOREM, PROOF, AXIOM, DEFINITION,BRING):
             # Handle variable declarations
             if self.lexer.get_current_token().type is VAR:
                 self.match(VAR)
@@ -1029,6 +1123,9 @@ class Parser:
                 declarations.append(self.proof_declaration())
             elif self.lexer.get_current_token().type is DEFINITION:
                 declarations.append(self.definition_declaration())
+            elif self.lexer.get_current_token().type is BRING:
+                declarations.append(self.bring_statement())
+                # SEMI already consumed in bring_statement()
             # Handle function declarations
             while self.lexer.get_current_token().type is FUNCTION:
                 self.match(FUNCTION)

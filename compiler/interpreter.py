@@ -5,7 +5,9 @@ from utils.constants import *
 from utils.data_classes import *
 from utils.errors import InterpreterError, ErrorCode
 from utils.colors import ProofConsole, Colors
+from system.package_manager import EasierHubPackageManager
 
+from typing import Dict, Any, List, Optional
 
 class Interpreter(BeforeNodeVisitor, NestedScopeable):
     def __init__(self, tree):
@@ -19,7 +21,8 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.tests = {}  # Store tests
         self.axioms = {}  # Store axioms
         self.definitions = {}  # Store definitions
-
+        self.brought_packages = {}  # Store imported packages
+        # self.package_manager = EasierHubPackageManager()
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -740,4 +743,104 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         # In a more advanced system, we'd substitute parameters with arguments
         definition.increment_usage()
         return definition.get_body()
+    def visit_BringStatement(self, node: BringStatement):
+        """Execute bring statement - import package from Easier Hub"""
+        package_name = node.get_package_name()
+        
+        # Check if already loaded
+        if package_name in self.brought_packages:
+            print(f"Package '{package_name}' already loaded")
+            return node
+
+        # Fetch package from Easier Hub
+        from utils.colors import  Colors
+        print(f"{Colors.BRIGHT_GREEN}{Colors.BOLD}[BRING]{Colors.RESET} "
+              f"Fetching package '{Colors.BRIGHT_WHITE}{package_name}{Colors.RESET}' "
+              f"from {Colors.CYAN}{node.get_source_hub()}{Colors.RESET}...")
+        
+        package_data = self.package_manager.fetch_package(package_name)
+        
+        if package_data is None:
+            self.error(f"Failed to load package '{package_name}'")
+            return node
+        
+        # Store package content
+        node.set_package_content(package_data)
+        self.brought_packages[package_name] = node
+        
+        # Process package content
+        self.process_package_content(node, package_data)
+        
+        # Success message
+        version = package_data.get('version', 'unknown')
+        cached = " (cached)" if package_data.get('cached') else ""
+        
+        print(f"{Colors.SUCCESS}[SUCCESS]{Colors.RESET} "
+              f"Package '{Colors.BRIGHT_WHITE}{package_name}{Colors.RESET}' "
+              f"v{version} loaded{cached}")
+        
+        # Show available items if specific import
+        if node.get_specific_items():
+            available_items = self.get_package_items(package_data)
+            for item in node.get_specific_items():
+                if item in available_items:
+                    print(f"  ✓ {Colors.GREEN}{item}{Colors.RESET}")
+                else:
+                    print(f"  ✗ {Colors.ERROR}{item} (not found){Colors.RESET}")
+        
+        return node
+    
+    def process_package_content(self, bring_node: BringStatement, package_data: Dict[str, Any]):
+        """Process imported package content"""
+        content = package_data.get('content', {})
+        alias = bring_node.get_alias()
+        specific_items = bring_node.get_specific_items()
+        
+        # Create package namespace in symbol table
+        package_symbols = {}
+        
+        # Process different types of content
+        for key, value in content.items():
+            if key.startswith('schema:'):
+                # Handle schema definitions
+                schema_name = key.split(':', 1)[1]
+                package_symbols[schema_name] = value
+            
+            elif hasattr(value, 'items'):  # BringObject
+                # Handle object definitions (functions, constants, etc.)
+                if specific_items:
+                    # Only import specific items
+                    for item in specific_items:
+                        if item in value.items:
+                            self.symbol_table.define(Symbol(item, value.items[item]))
+                else:
+                    # Import all items under package namespace
+                    package_symbols.update(value.items)
+            
+            else:
+                # Handle primitive values
+                if specific_items:
+                    if key in specific_items:
+                        self.symbol_table.define(Symbol(key, value))
+                else:
+                    package_symbols[key] = value
+        
+        # Define package namespace if not specific import
+        if not specific_items and package_symbols:
+            self.symbol_table.define(Symbol(alias, package_symbols))
+    
+    def get_package_items(self, package_data: Dict[str, Any]) -> list:
+        """Get list of available items in package"""
+        items = []
+        content = package_data.get('content', {})
+        
+        for key, value in content.items():
+            if key.startswith('schema:'):
+                items.append(key.split(':', 1)[1])
+            elif hasattr(value, 'items'):
+                items.extend(value.items.keys())
+            else:
+                items.append(key)
+        
+        return items
     

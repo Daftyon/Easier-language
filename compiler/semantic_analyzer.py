@@ -16,6 +16,8 @@ class SemanticAnalyzer(NodeVisitor):
         self.tests = {}  # Track tests
         self.axioms = {}  # Track axioms
         self.definitions = {}  # Track definitions
+        self.brought_packages = {}  # Track imported packages
+        # self.package_manager = EasierHubPackageManager()
 
 
 
@@ -477,4 +479,27 @@ class SemanticAnalyzer(NodeVisitor):
         print(f"{Colors.BRIGHT_CYAN}[DEFINITION]{Colors.RESET} "
               f"{Colors.BRIGHT_WHITE}{definition_name}{params_str}{Colors.RESET} "
               f"{Colors.CYAN}defined{Colors.RESET}")
+    def visit_BringStatement(self, node: BringStatement):
+        """Semantic analysis for bring statements"""
+        package_name = node.get_package_name()
+        
+        # Check if package already imported
+        if package_name in self.brought_packages:
+            print(f"Warning: Package '{package_name}' already imported")
+            return
+        
+        # Validate package name
+        if not package_name.replace('_', '').replace('-', '').isalnum():
+            self.error(ErrorCode.SEMANTIC_ERROR, f"Invalid package name: {package_name}")
+        
+        # Register package import
+        self.brought_packages[package_name] = node
+        
+        from utils.colors import  Colors
+        source = f" from {node.get_source_hub()}" if node.get_source_hub() != "easier-hub" else ""
+        alias = f" as {node.get_alias()}" if node.get_alias() != package_name else ""
+        items = f" ({', '.join(node.get_specific_items())})" if node.get_specific_items() else ""
+        
+        print(f"{Colors.BRIGHT_GREEN}[BRING]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{package_name}{items}{alias}{source}{Colors.RESET}")
    

@@ -373,8 +373,19 @@ class Lexer(object):
             self.advance(10)  # "definition" is 10 characters
             self.current_token = Token(DEFINITION, DEFINITION)
             return self.current_token
-        
-            
+        elif self.next_characters_are("bring"):
+            self.advance(5)  # "bring" is 5 characters
+            self.current_token = Token(BRING, BRING)
+            return self.current_token
+        elif self.next_characters_are("from"):
+            self.advance(4)  # "from" is 4 characters
+            self.current_token = Token(FROM, FROM)
+            return self.current_token
+        elif self.next_characters_are("as"):
+            self.advance(2)  # "as" is 2 characters
+            self.current_token = Token(AS, AS)
+            return self.current_token
+                    
         else:
             if cur_char.isspace():
                 while self.get_current_character() is not None and self.get_current_character().isspace():

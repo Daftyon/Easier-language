@@ -26,7 +26,7 @@ def check_dependencies():
     """Check that dependencies are installed"""
     print("🔍 Checking dependencies...")
     
-    dependencies = ['pyinstaller']
+    dependencies = ['pyinstaller','requests']
     optional_dependencies = ['PIL']  # Pillow for icon handling
     missing = []
     missing_optional = []

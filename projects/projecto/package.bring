@@ -1,0 +1,23 @@
+# package.bring
+package = {
+    name = "my-project"
+    version = "1.0.0"
+    description = "My awesome EL project"
+    author = "Your Name <you@example.com>"
+    license = "MIT"
+    
+    dependencies = [
+        "http-server@^2.3.0"
+        "json-parser@^1.2.0" 
+        "logger@~2.1.0"
+        "crypto@>=1.0.0"
+    ]
+    
+    dev_dependencies = [
+        "test-framework@^1.0.0"
+        "benchmark-tools@^0.5.0"
+    ]
+    
+    repository = "https://github.com/yourname/my-project"
+    homepage = "https://yourname.github.io/my-project"
+}

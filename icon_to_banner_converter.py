@@ -100,7 +100,7 @@ def create_banner_variations():
         # Style 1: Simple ASCII
         banner1 = f"""
 {ascii_art}
-    El Programming Language v1.0.8
+    El Programming Language v1.0.9
     A modern and easy programming language
 """
         
@@ -116,13 +116,13 @@ def create_banner_variations():
             banner2 += f"= {line:<{max_width}} =\n"
         
         banner2 += f"""{border}
-  El Programming Language v1.0.8
+  El Programming Language v1.0.9
   A modern and easy programming language
 """
         
         # Style 3: Compact with text
         banner3 = f"""
-{ascii_art}    El Programming Language v1.0.8
+{ascii_art}    El Programming Language v1.0.9
     Created by El Language Team
     https://github.com/Daftyon/Easier-language
 """
@@ -147,7 +147,7 @@ def save_banners_to_file(banners):
         f.write('Auto-generated from el_icone.ico\n')
         f.write('"""\n\n')
         
-        f.write('__version__ = "1.0.8"\n')
+        f.write('__version__ = "1.0.9"\n')
         f.write('__author__ = "El Language Team"\n\n')
         
         for size_name, styles in banners.items():

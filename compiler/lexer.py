@@ -134,21 +134,22 @@ class Lexer(object):
     @staticmethod
     def get_reserved_keyword_token(token_type):
         return RESERVED_KEYWORDS.get(token_type)
-
     def _id(self):
-        result = ""
-        while self.get_current_character() is not None and self.get_current_character().isalnum():
-            result += self.get_current_character()
-            self.advance()
+            result = ""
+            # ✅ FIXED: Accept alphanumeric characters AND underscores
+            while (self.get_current_character() is not None and 
+                (self.get_current_character().isalnum() or self.get_current_character() == '_')):
+                result += self.get_current_character()
+                self.advance()
 
-        if result.upper() in RESERVED_KEYWORDS:
-            result = result.upper()
-            return self.get_reserved_keyword_token(result)
-        elif result.lower() in RESERVED_KEYWORDS:
-            result = result.lower()
-            return self.get_reserved_keyword_token(result)
+            if result.upper() in RESERVED_KEYWORDS:
+                result = result.upper()
+                return self.get_reserved_keyword_token(result)
+            elif result.lower() in RESERVED_KEYWORDS:
+                result = result.lower()
+                return self.get_reserved_keyword_token(result)
 
-        return Token(ID, result)
+            return Token(ID, result)
 
     def _string(self):
         cur_char = self.get_current_character()

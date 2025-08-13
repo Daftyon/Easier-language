@@ -773,3 +773,42 @@ class DefinitionDeclaration(AST):
     def __str__(self):
         params = f"({', '.join(self.parameters)})" if self.parameters else ""
         return f'Definition({self.definition_name}{params}, {self.definition_body})'
+
+class BringStatement(AST):
+    """Represents a bring statement for importing packages"""
+    def __init__(self, package_name: str, source_hub: str = None, alias: str = None, 
+                 specific_items: list = None):
+        self.package_name = package_name      # Name of package to import
+        self.source_hub = source_hub or "easier-hub"  # Default to easier-hub
+        self.alias = alias                    # Optional alias (bring X as Y)
+        self.specific_items = specific_items or []  # Specific items to import
+        self.is_loaded = False               # Whether package is loaded
+        self.package_content = None          # Loaded package content
+        
+    def get_package_name(self):
+        return self.package_name
+    
+    def get_source_hub(self):
+        return self.source_hub
+    
+    def get_alias(self):
+        return self.alias or self.package_name
+    
+    def get_specific_items(self):
+        return self.specific_items
+    
+    def is_package_loaded(self):
+        return self.is_loaded
+    
+    def set_package_content(self, content):
+        self.package_content = content
+        self.is_loaded = True
+    
+    def get_package_content(self):
+        return self.package_content
+    
+    def __str__(self):
+        items = f" ({', '.join(self.specific_items)})" if self.specific_items else ""
+        alias = f" as {self.alias}" if self.alias and self.alias != self.package_name else ""
+        source = f" from {self.source_hub}" if self.source_hub != "easier-hub" else ""
+        return f'BringStatement({self.package_name}{items}{alias}{source})'

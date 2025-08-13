@@ -10,7 +10,8 @@ import platform
 import subprocess
 import shutil
 from pathlib import Path
-
+from requests import *
+from bring_parser import *
 def run_command(cmd, cwd=None):
     """Execute a system command"""
     print(f"🔧 Executing: {cmd}")
@@ -26,7 +27,7 @@ def check_dependencies():
     """Check that dependencies are installed"""
     print("🔍 Checking dependencies...")
     
-    dependencies = ['pyinstaller']
+    dependencies = ['pyinstaller', 'requests', 'compiler', 'utils', 'system','bring_parser']
     optional_dependencies = ['PIL']  # Pillow for icon handling
     missing = []
     missing_optional = []
@@ -125,12 +126,29 @@ def create_examples():
         show "F(" + i + ") = " + fib(i);
     }
 }"""
+    axiomatic_method="""
+
+ALGORITHM testfix {
+    theorem simple: true;
+        definition even: true;                    // x is even if x mod 2 = 0 (simplified)
+
+        axiom identity: true === true;
+ axiom excludedmiddle: true or ! true;
+    proof simple {
+        hypothesis h1: false;
+        test t1: h1: realistic;
+        realistic;
+        QED;
+    }
     
+    SHOW("Fixed!");
+}"""
     # Write examples
     examples = {
         "hello_world.el": hello_world,
         "calculator.el": calculator,
-        "fibonacci.el": fibonacci
+        "fibonacci.el": fibonacci,
+        "axiomatic_method.el":axiomatic_method,
     }
     
     for filename, content in examples.items():

@@ -134,21 +134,22 @@ class Lexer(object):
     @staticmethod
     def get_reserved_keyword_token(token_type):
         return RESERVED_KEYWORDS.get(token_type)
-
     def _id(self):
-        result = ""
-        while self.get_current_character() is not None and self.get_current_character().isalnum():
-            result += self.get_current_character()
-            self.advance()
+            result = ""
+            # ✅ FIXED: Accept alphanumeric characters AND underscores
+            while (self.get_current_character() is not None and 
+                (self.get_current_character().isalnum() or self.get_current_character() == '_')):
+                result += self.get_current_character()
+                self.advance()
 
-        if result.upper() in RESERVED_KEYWORDS:
-            result = result.upper()
-            return self.get_reserved_keyword_token(result)
-        elif result.lower() in RESERVED_KEYWORDS:
-            result = result.lower()
-            return self.get_reserved_keyword_token(result)
+            if result.upper() in RESERVED_KEYWORDS:
+                result = result.upper()
+                return self.get_reserved_keyword_token(result)
+            elif result.lower() in RESERVED_KEYWORDS:
+                result = result.lower()
+                return self.get_reserved_keyword_token(result)
 
-        return Token(ID, result)
+            return Token(ID, result)
 
     def _string(self):
         cur_char = self.get_current_character()
@@ -373,8 +374,19 @@ class Lexer(object):
             self.advance(10)  # "definition" is 10 characters
             self.current_token = Token(DEFINITION, DEFINITION)
             return self.current_token
-        
-            
+        elif self.next_characters_are("bring"):
+            self.advance(5)  # "bring" is 5 characters
+            self.current_token = Token(BRING, BRING)
+            return self.current_token
+        elif self.next_characters_are("from"):
+            self.advance(4)  # "from" is 4 characters
+            self.current_token = Token(FROM, FROM)
+            return self.current_token
+        elif self.next_characters_are("as"):
+            self.advance(2)  # "as" is 2 characters
+            self.current_token = Token(AS, AS)
+            return self.current_token
+                    
         else:
             if cur_char.isspace():
                 while self.get_current_character() is not None and self.get_current_character().isspace():

@@ -126,12 +126,29 @@ def create_examples():
         show "F(" + i + ") = " + fib(i);
     }
 }"""
+    axiomatic_method="""
+
+ALGORITHM testfix {
+    theorem simple: true;
+        definition even: true;                    // x is even if x mod 2 = 0 (simplified)
+
+        axiom identity: true === true;
+ axiom excludedmiddle: true or ! true;
+    proof simple {
+        hypothesis h1: false;
+        test t1: h1: realistic;
+        realistic;
+        QED;
+    }
     
+    SHOW("Fixed!");
+}"""
     # Write examples
     examples = {
         "hello_world.el": hello_world,
         "calculator.el": calculator,
-        "fibonacci.el": fibonacci
+        "fibonacci.el": fibonacci,
+        "axiomatic_method.el":axiomatic_method,
     }
     
     for filename, content in examples.items():

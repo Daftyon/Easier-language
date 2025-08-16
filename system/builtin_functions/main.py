@@ -1,4 +1,5 @@
-from utils.constants import TRUE, FALSE, OR, AND, INTEGER, REAL, STRING, BOOLEAN, FLOAT,REALISTIC
+from utils.constants import TRUE, FALSE, OR, AND, INTEGER, REAL, STRING, BOOLEAN, FLOAT, REALISTIC
+from .graphics import graphics as _graphics
 
 _delta_for_floats = 1 / 1e8
 
@@ -7,6 +8,101 @@ class BuiltinFunctions:
     @staticmethod
     def print(*items):
         print(*items)
+    
+    # Graphics functions
+    @staticmethod
+    def forward(distance: float):
+        _graphics.forward(distance)
+    
+    @staticmethod
+    def backward(distance: float):
+        _graphics.backward(distance)
+    
+    @staticmethod
+    def right(angle: float):
+        _graphics.right(angle)
+    
+    @staticmethod
+    def left(angle: float):
+        _graphics.left(angle)
+    
+    @staticmethod
+    def penup():
+        _graphics.penup()
+    
+    @staticmethod
+    def pendown():
+        _graphics.pendown()
+    
+    @staticmethod
+    def goto(x: float, y: float):
+        _graphics.goto(x, y)
+    
+    @staticmethod
+    def setposition(x: float, y: float):
+        _graphics.setposition(x, y)
+    
+    @staticmethod
+    def setx(x: float):
+        _graphics.setx(x)
+    
+    @staticmethod
+    def sety(y: float):
+        _graphics.sety(y)
+    
+    @staticmethod
+    def setheading(angle: float):
+        _graphics.setheading(angle)
+    
+    @staticmethod
+    def circle(radius: float, extent=None, steps=None):
+        if extent is not None and steps is not None:
+            _graphics.circle(radius, extent, steps)
+        elif extent is not None:
+            _graphics.circle(radius, extent)
+        else:
+            _graphics.circle(radius)
+    
+    @staticmethod
+    def dot(size=None, color=None):
+        if color is not None and size is not None:
+            _graphics.dot(size, color)
+        elif size is not None:
+            _graphics.dot(size)
+        else:
+            _graphics.dot()
+    
+    @staticmethod
+    def color(*args):
+        _graphics.color(*args)
+    
+    @staticmethod
+    def bgcolor(*args):
+        _graphics.bgcolor(*args)
+    
+    @staticmethod
+    def width(width: float):
+        _graphics.width(width)
+    
+    @staticmethod
+    def speed(speed: int):
+        _graphics.speed(speed)
+    
+    @staticmethod
+    def clear():
+        _graphics.clear()
+    
+    @staticmethod
+    def reset():
+        _graphics.reset()
+    
+    @staticmethod
+    def done():
+        _graphics.done()
+    
+    @staticmethod
+    def exitonclick():
+        _graphics.exitonclick()
 
 
 _builtin_functions = BuiltinFunctions()

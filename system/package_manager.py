@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, Callable
 import os
 import io
 import sys
+from turtle import *
 
 try:
     from bring_parser import parse_bring_string, BringParseError

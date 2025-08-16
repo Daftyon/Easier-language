@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from requests import *
+from turtle import *
 
 # Add current directory to path for imports
 if getattr(sys, 'frozen', False):
@@ -63,7 +64,7 @@ except ImportError:
         def __init__(self, value):
             self.value = value
 
-__version__ = "1.0.9"
+__version__ = "1.1.0"
 __author__ = "El Language Team"
 
 class ElREPL:

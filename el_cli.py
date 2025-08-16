@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from requests import *
+from turtle import *
+
 
 # Import your existing compiler components
 try:
@@ -17,6 +19,7 @@ try:
     from system.package_manager import EasierHubPackageManager
     from utils.colors import Colors
     from requests import *
+    from turtle import *
 
 except ImportError as e:
     print(f"Error: Unable to import El compiler components: {e}")
@@ -52,7 +55,7 @@ except ImportError:
         def __init__(self, value):
             self.value = value
 
-__version__ = "1.0.9"
+__version__ = "1.1.0"
 
 class PackageDownloader:
     """Package download manager for .bring files"""

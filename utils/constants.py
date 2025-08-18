@@ -60,6 +60,9 @@ HYPOTHESIS = 'HYPOTHESIS'
 TEST = 'TEST'
 AXIOM = 'AXIOM'
 DEFINITION = 'DEFINITION'
+BRING = 'BRING'
+FROM = 'FROM'  # For "bring X from Y" syntax
+AS = 'AS'
 
 
 

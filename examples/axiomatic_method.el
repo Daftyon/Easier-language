@@ -1,4 +1,5 @@
 
+
 ALGORITHM testfix {
     theorem simple: true;
         definition even: true;                    // x is even if x mod 2 = 0 (simplified)

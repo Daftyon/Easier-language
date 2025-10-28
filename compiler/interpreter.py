@@ -5,7 +5,9 @@ from utils.constants import *
 from utils.data_classes import *
 from utils.errors import InterpreterError, ErrorCode
 from utils.colors import ProofConsole, Colors
+from system.package_manager import EasierHubPackageManager
 
+from typing import Dict, Any, List, Optional
 
 class Interpreter(BeforeNodeVisitor, NestedScopeable):
     def __init__(self, tree):
@@ -15,7 +17,12 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         self.tree = tree
         self.theorems = {}  # Store theorems during interpretation
         self.proofs = {}    # Store proofs during interpretation
-
+        self.hypotheses = {}  # Store active hypotheses
+        self.tests = {}  # Store tests
+        self.axioms = {}  # Store axioms
+        self.definitions = {}  # Store definitions
+        self.brought_packages = {}  # Store imported packages
+        self.package_manager = EasierHubPackageManager()
         super().__init__(SymbolTable())
 
     def error(self, message):
@@ -543,6 +550,415 @@ class Interpreter(BeforeNodeVisitor, NestedScopeable):
         """Execute QED statement"""
         # QED marks end of proof
         return "QED"
+    
+    def visit_HypothesisStatement(self, node: HypothesisStatement):
+        """Execute hypothesis statement - add assumption to context"""
+        hypothesis_name = node.get_name()
+        
+        # Register hypothesis
+        self.hypotheses[hypothesis_name] = node
+        
+        # Print colored hypothesis
+        from utils.colors import Colors
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}[HYPOTHESIS]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{hypothesis_name}{Colors.RESET}: "
+              f"{Colors.CYAN}{node.get_statement()}{Colors.RESET} "
+              f"{Colors.YELLOW}(assumed){Colors.RESET}")
+        
+        return node
+    
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Enhanced proof execution with hypothesis support"""
+        theorem_name = node.get_theorem_name()
+        
+        if theorem_name not in self.theorems:
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        self.proofs[theorem_name] = node
+        
+        from utils.colors import ProofConsole, Colors
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps with hypothesis support
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            if step.is_hypothesis_step():
+                # Display hypothesis step
+                print(f"   {Colors.BRIGHT_CYAN}{i}. [HYPOTHESIS]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_hypothesis_name()}{Colors.RESET}: "
+                      f"{Colors.CYAN}{step.get_statement()}{Colors.RESET}")
+            else:
+                # Regular proof step
+                ProofConsole.proof_step(i, step.get_statement())
+        
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            from utils.colors import ProofConsole
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
+    def visit_TestStatement(self, node: TestStatement):
+        """Execute test statement - test hypothesis against condition"""
+        test_name = node.get_test_name()
+        hypothesis_name = node.get_hypothesis_name()
+        
+        # Get the hypothesis being tested
+        if hypothesis_name not in self.hypotheses:
+            self.error(f"Cannot test unknown hypothesis: {hypothesis_name}")
+        
+        hypothesis = self.hypotheses[hypothesis_name]
+        test_condition = node.get_test_condition()
+        
+        # Evaluate both hypothesis and test condition
+        hypothesis_value = self.visit(hypothesis.get_statement())
+        test_condition_value = self.visit(test_condition)
+        
+        # Determine test result
+        test_result = self.evaluate_test(hypothesis_value, test_condition_value)
+        node.set_test_result(test_result)
+        
+        # Store test
+        self.tests[test_name] = node
+        
+        # Print colored test result
+        from utils.colors import Colors
+        result_color = Colors.SUCCESS if test_result == "PASS" else \
+                      Colors.ERROR if test_result == "FAIL" else Colors.WARNING
+        
+        print(f"{Colors.BRIGHT_YELLOW}{Colors.BOLD}[TEST]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{test_name}{Colors.RESET}: "
+              f"{result_color}{test_result}{Colors.RESET}")
+        print(f"   Hypothesis '{hypothesis_name}': {hypothesis_value}")
+        print(f"   Test condition: {test_condition_value}")
+        
+        return node
+    
+    def evaluate_test(self, hypothesis_value, test_condition_value):
+        """Evaluate test result based on hypothesis and test condition values"""
+        from utils.constants import TRUE, FALSE, REALISTIC
+        
+        # Simple test logic: does hypothesis match test condition?
+        if hypothesis_value == test_condition_value:
+            return "PASS"
+        elif (hypothesis_value == REALISTIC or test_condition_value == REALISTIC):
+            return "UNCERTAIN"  # Realistic values create uncertainty
+        else:
+            return "FAIL"
+    
+    def visit_ProofDeclaration(self, node: ProofDeclaration):
+        """Enhanced proof execution with test support"""
+        theorem_name = node.get_theorem_name()
+        
+        if theorem_name not in self.theorems:
+            self.error(f"Cannot create proof for unknown theorem: {theorem_name}")
+        
+        self.proofs[theorem_name] = node
+        
+        from utils.colors import ProofConsole, Colors
+        ProofConsole.proof_start(theorem_name, len(node.get_proof_steps()))
+        
+        # Execute proof steps with hypothesis and test support
+        for i, step in enumerate(node.get_proof_steps(), 1):
+            if step.is_hypothesis_step():
+                # Display hypothesis step
+                print(f"   {Colors.BRIGHT_CYAN}{i}. [HYPOTHESIS]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_hypothesis_name()}{Colors.RESET}: "
+                      f"{Colors.CYAN}{step.get_statement()}{Colors.RESET}")
+                      
+            elif step.is_test_step():
+                # Display test step
+                print(f"   {Colors.BRIGHT_YELLOW}{i}. [TEST]{Colors.RESET} "
+                      f"{Colors.BRIGHT_WHITE}{step.get_test_name()}{Colors.RESET}: "
+                      f"{Colors.YELLOW}{step.get_statement()}{Colors.RESET}")
+            else:
+                # Regular proof step
+                ProofConsole.proof_step(i, step.get_statement())
+        
+        if node.is_proof_complete():
+            ProofConsole.proof_complete(theorem_name)
+            
+            theorem = self.theorems[theorem_name]
+            theorem.set_proof(node)
+            node.mark_valid()
+            theorem.mark_proven()
+        else:
+            ProofConsole.proof_incomplete(theorem_name)
+        
+        return node
+    def visit_AxiomDeclaration(self, node: AxiomDeclaration):
+            """Execute axiom declaration - register fundamental truth"""
+            axiom_name = node.get_name()
+            
+            # Register axiom
+            self.axioms[axiom_name] = node
+            
+            # Print colored axiom
+            from utils.colors import Colors
+            print(f"{Colors.BRIGHT_MAGENTA}{Colors.BOLD}[AXIOM]{Colors.RESET} "
+                f"{Colors.BRIGHT_WHITE}{axiom_name}{Colors.RESET}")
+            print(f"   Statement: {Colors.MAGENTA}{node.get_statement()}{Colors.RESET}")
+            print(f"   Status: {Colors.SUCCESS}{Colors.BOLD}SELF-EVIDENT{Colors.RESET} "
+                f"{Colors.MAGENTA}(requires no proof){Colors.RESET}")
+            
+            return node
+     
+    def visit_DefinitionDeclaration(self, node: DefinitionDeclaration):
+        """Execute definition declaration - register definition"""
+        definition_name = node.get_name()
+        
+        # Register definition
+        self.definitions[definition_name] = node
+        
+        # Print colored definition
+        from utils.colors import Colors
+        params_str = f"({', '.join(node.get_parameters())})" if node.has_parameters() else ""
+        
+        print(f"{Colors.BRIGHT_CYAN}{Colors.BOLD}[DEFINITION]{Colors.RESET} "
+              f"{Colors.BRIGHT_WHITE}{definition_name}{params_str}{Colors.RESET}")
+        print(f"   Body: {Colors.CYAN}{node.get_body()}{Colors.RESET}")
+        
+        if node.has_parameters():
+            print(f"   Parameters: {Colors.YELLOW}{', '.join(node.get_parameters())}{Colors.RESET}")
+        
+        print(f"   Status: {Colors.SUCCESS}DEFINED{Colors.RESET}")
+        
+        return node
+    
+    def lookup_definition(self, name):
+        """Look up a definition by name"""
+        return self.definitions.get(name, None)
+    
+    def apply_definition(self, definition_name, arguments=None):
+        """Apply a definition with given arguments"""
+        definition = self.lookup_definition(definition_name)
+        if not definition:
+            return None
+        
+        # For now, just return the definition body
+        # In a more advanced system, we'd substitute parameters with arguments
+        definition.increment_usage()
+        return definition.get_body()
+    def visit_BringStatement(self, node: BringStatement):
+        """Execute bring statement - import package from Easier Hub"""
+        package_name = node.get_package_name()
+        
+        # Check if already loaded
+        if package_name in self.brought_packages:
+            print(f"Package '{package_name}' already loaded")
+            return node
 
+        # Fetch package from Easier Hub
+        from utils.colors import  Colors
+        print(f"{Colors.BRIGHT_GREEN}{Colors.BOLD}[BRING]{Colors.RESET} "
+              f"Fetching package '{Colors.BRIGHT_WHITE}{package_name}{Colors.RESET}' "
+              f"from {Colors.CYAN}{node.get_source_hub()}{Colors.RESET}...")
+        
+        package_data = self.package_manager.fetch_package(package_name)
+        
+        if package_data is None:
+            self.error(f"Failed to load package '{package_name}'")
+            return node
+        
+        # Store package content
+        node.set_package_content(package_data)
+        self.brought_packages[package_name] = node
+        
+        # Process package content
+        self.process_package_content(node, package_data)
+        
+        # Success message
+        version = package_data.get('version', 'unknown')
+        cached = " (cached)" if package_data.get('cached') else ""
+        
+        print(f"{Colors.SUCCESS}[SUCCESS]{Colors.RESET} "
+              f"Package '{Colors.BRIGHT_WHITE}{package_name}{Colors.RESET}' "
+              f"v{version} loaded{cached}")
+        
+        # Show available items if specific import
+        if node.get_specific_items():
+            available_items = self.get_package_items(package_data)
+            for item in node.get_specific_items():
+                if item in available_items:
+                    print(f"  ✓ {Colors.GREEN}{item}{Colors.RESET}")
+                else:
+                    print(f"  ✗ {Colors.ERROR}{item} (not found){Colors.RESET}")
+        
+        return node
     
+    def process_package_content(self, bring_node: BringStatement, package_data: Dict[str, Any]):
+        """Process imported package content"""
+        content = package_data.get('content', {})
+        alias = bring_node.get_alias()
+        specific_items = bring_node.get_specific_items()
+        
+        # Create package namespace in symbol table
+        package_symbols = {}
+        
+        # Process different types of content
+        for key, value in content.items():
+            if key.startswith('schema:'):
+                # Handle schema definitions
+                schema_name = key.split(':', 1)[1]
+                package_symbols[schema_name] = value
+            
+            elif hasattr(value, 'items'):  # BringObject
+                # Handle object definitions (functions, constants, etc.)
+                if specific_items:
+                    # Only import specific items
+                    for item in specific_items:
+                        if item in value.items:
+                            self.symbol_table.define(Symbol(item, value.items[item]))
+                else:
+                    # Import all items under package namespace
+                    package_symbols.update(value.items)
+            
+            else:
+                # Handle primitive values
+                if specific_items:
+                    if key in specific_items:
+                        self.symbol_table.define(Symbol(key, value))
+                else:
+                    package_symbols[key] = value
+        
+        # Define package namespace if not specific import
+        if not specific_items and package_symbols:
+            self.symbol_table.define(Symbol(alias, package_symbols))
     
+    def get_package_items(self, package_data: Dict[str, Any]) -> list:
+        """Get list of available items in package"""
+        items = []
+        content = package_data.get('content', {})
+        
+        for key, value in content.items():
+            if key.startswith('schema:'):
+                items.append(key.split(':', 1)[1])
+            elif hasattr(value, 'items'):
+                items.extend(value.items.keys())
+            else:
+                items.append(key)
+        
+        return items
+    def parse_content_key(self, key: str) -> tuple:
+        """Parse content key to extract type and name"""
+        if ':' in key:
+            content_type, item_name = key.split(':', 1)
+            return content_type, item_name
+        else:
+            return 'unknown', key
+    def process_tar_package_content(self, bring_node: BringStatement, package_data: Dict[str, Any]):
+        """Process tar package content into symbol table"""
+        content = package_data.get('content', {})
+        metadata = package_data.get('metadata', {})
+        alias = bring_node.get_alias()
+        specific_items = bring_node.get_specific_items()
+        
+        # Create package namespace in symbol table
+        package_symbols = {}
+        imported_items = []
+        
+        try:
+            # Process different types of content from tar package
+            for key, value in content.items():
+                content_type, item_name = self.parse_content_key(key)
+                
+                if content_type == 'el':
+                    # EL source code - could contain function definitions, variables, etc.
+                    # For now, we'll store the source code as a string
+                    # In a full implementation, you might want to parse and execute it
+                    package_symbols[item_name] = {'type': 'el_source', 'content': value}
+                    imported_items.append(f"el:{item_name}")
+                
+                elif content_type == 'bring':
+                    # Bring definitions - structured package definitions
+                    if isinstance(value, dict):
+                        package_symbols[item_name] = value
+                    else:
+                        package_symbols[item_name] = {'type': 'bring_def', 'content': value}
+                    imported_items.append(f"bring:{item_name}")
+                
+                elif content_type == 'json':
+                    # JSON configuration or data
+                    package_symbols[item_name] = {'type': 'json_data', 'data': value}
+                    imported_items.append(f"json:{item_name}")
+                
+                elif content_type == 'text':
+                    # Text files (documentation, etc.)
+                    package_symbols[item_name] = {'type': 'text', 'content': value}
+                    imported_items.append(f"text:{item_name}")
+                
+                elif content_type == 'file':
+                    # File references
+                    package_symbols[item_name] = {'type': 'file_ref', 'path': value}
+                    imported_items.append(f"file:{item_name}")
+                
+                else:
+                    # Unknown content type - store as-is
+                    package_symbols[item_name] = {'type': 'unknown', 'content': value}
+                    imported_items.append(f"unknown:{item_name}")
+            
+            # Handle specific imports vs. global import
+            if specific_items:
+                # Import only specific items
+                for item in specific_items:
+                    if item in package_symbols:
+                        # Define the item directly in current scope
+                        symbol_value = package_symbols[item]
+                        self.symbol_table.define(Symbol(item, symbol_value))
+                        print(f"  ✓ {Colors.GREEN}Imported {item}{Colors.RESET}")
+                    else:
+                        print(f"  ✗ {Colors.ERROR}{item} not found in package{Colors.RESET}")
+            else:
+                # Import entire package under alias
+                package_obj = {
+                    'metadata': metadata,
+                    'items': package_symbols,
+                    'imported_items': imported_items
+                }
+                self.symbol_table.define(Symbol(alias, package_obj))
+                print(f"  ✓ {Colors.GREEN}Package imported as '{alias}'{Colors.RESET}")
+        
+        except Exception as e:
+            print(f"{Colors.ERROR}[ERROR]{Colors.RESET} Error processing package content: {e}")
+            # Create minimal package object even if processing fails
+            package_obj = {
+                'metadata': metadata,
+                'items': {},
+                'error': str(e)
+            }
+            self.symbol_table.define(Symbol(alias, package_obj))
+                
+    def display_package_info(self, package_data: Dict[str, Any], specific_items: List[str] = None):
+            """Display information about the loaded package"""
+            metadata = package_data.get('metadata', {})
+            content = package_data.get('content', {})
+            
+            # Show package metadata
+            if 'description' in metadata:
+                print(f"  📝 {Colors.CYAN}Description:{Colors.RESET} {metadata['description']}")
+            
+            if 'files' in metadata:
+                file_count = len(metadata['files'])
+                print(f"  📁 {Colors.CYAN}Files:{Colors.RESET} {file_count} files extracted")
+            
+            # Show available items
+            available_items = list(content.keys())
+            if available_items:
+                if specific_items:
+                    print(f"  📦 {Colors.CYAN}Requested items:{Colors.RESET}")
+                    for item in specific_items:
+                        status = "✓" if any(item in key for key in available_items) else "✗"
+                        color = Colors.GREEN if status == "✓" else Colors.ERROR
+                        print(f"    {status} {color}{item}{Colors.RESET}")
+                else:
+                    print(f"  📦 {Colors.CYAN}Available items:{Colors.RESET} {len(available_items)}")
+                    # Show first few items
+                    for item in available_items[:5]:
+                        content_type, item_name = self.parse_content_key(item)
+                        print(f"    • {Colors.YELLOW}{content_type}{Colors.RESET}:{item_name}")
+                    if len(available_items) > 5:
+                        print(f"    ... and {len(available_items) - 5} more")

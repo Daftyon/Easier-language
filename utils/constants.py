@@ -56,4 +56,13 @@ TERNARY = 'TERNARY'  # New type for three-valued logic
 THEOREM = "THEOREM"  # New keyword for theorem declarations
 PROOF = 'PROOF'
 QED = 'QED'  # End of proof marker
+HYPOTHESIS = 'HYPOTHESIS'
+TEST = 'TEST'
+AXIOM = 'AXIOM'
+DEFINITION = 'DEFINITION'
+BRING = 'BRING'
+FROM = 'FROM'  # For "bring X from Y" syntax
+AS = 'AS'
+
+
 

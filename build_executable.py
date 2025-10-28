@@ -163,7 +163,7 @@ def build_executable():
     system = platform.system().lower()
     
     # Check if icon exists and is valid
-    icon_path = Path("el_icone.ico")
+    icon_path = Path("matyos_icon.ico")
     icon_option = []
     
     if icon_path.exists():
